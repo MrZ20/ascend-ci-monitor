@@ -1,3 +1,7 @@
+<!-- latest-report:start -->
+最新日报：[上海统计日 2026-11-12](reports/2026/11/2026-11-12.md)
+<!-- latest-report:end -->
+
 # Ascend CI monitoring reports
 
 [最新统计日报告](reports/2026/11/2026-11-12.md)
