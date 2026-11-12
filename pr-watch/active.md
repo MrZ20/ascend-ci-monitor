@@ -1,22 +1,37 @@
 # PR 关注列表
 
-最近刷新：2026-11-12 17:58:09（上海时间）
-当前关注的开放 PR：75
+最近刷新：2026-11-12 18:50:08（上海时间）
+当前关注的开放 PR：117
 范围：最近 30 天有创建、提交、CI、Draft 或目标分支变化证据的开放 PR；普通评论不算活动。
 长期无元数据更新的旧 PR 未逐个追查仅 CI 重跑的活动，本页不代表这类活动已全覆盖。
 
-活动待确认：406 个较早创建、近期 updated_at 变化的开放 PR 尚无最近 30 天有效活动证据，暂不纳入。
+活动待确认：387 个较早创建、近期 updated_at 变化的开放 PR 尚无最近 30 天有效活动证据，暂不纳入。
 
-覆盖说明：1022 个近 30 天范围内的 PR 文件范围或详情待补齐。
+覆盖说明：984 个近 30 天范围内的 PR 文件范围或详情待补齐。
 
-本轮覆盖缺口：39 项采集未完成；受影响状态显示未知或等待补齐。
+本轮覆盖缺口：84 项采集未完成；受影响状态显示未知或等待补齐。
 
 ## 最近更新（72h）
 
+- [11-12 18:35 · #21717 \[CI\] Restore A5 multi-node nightly test cases](#pr-21717)
+- [11-12 18:35 · #21716 \[临时/勿合入\] ci: route Nightly-A2 cases to offline-cluster runner labels](#pr-21716)
+- [11-12 18:35 · #21715 \[Performance\] Fuse matmul-collective ops for dense sequence parallelism (MC2)](#pr-21715)
+- [11-12 18:35 · #21714 \[Refactor\]\[MRV2\] Adopt EPLB policy and model-state hooks](#pr-21714)
+- [11-12 18:35 · #21713 \[Doc\]soc\_version and soc\_series names refresh](#pr-21713)
+- [11-12 18:35 · #21712 \[Doc\]\[Misc\] Document Ascend Docker Runtime container setup](#pr-21712)
+- [11-12 18:35 · #21705 \[Feature\] DSpark expert-pool routing for the expert-offload path](#pr-21705)
+- [11-12 18:35 · #21687 \[Feature\]\[Kimi\] Provision the shared draft embedding on the last PP stage](#pr-21687)
+- [11-12 18:35 · #21686 \[BugFix\] Read quantized checkpoint indexes for RFork model state](#pr-21686)
+- [11-12 18:35 · #21624 \[Feature\]\[Model\] Add Kimi fine-grained projection and shared-expert TP](#pr-21624)
+- [11-12 18:35 · #21541 \[Doc\] add doc quality review workflow for docs/source changes](#pr-21541)
+- [11-12 18:35 · #21536 \[Feature\]\[KV Cache\] Prototype FlashStates frontier integration on Ascend (WIP)](#pr-21536)
+- [11-12 18:35 · #21481 \[CI\] memcache cases](#pr-21481)
+- [11-12 18:35 · #21469 \[Misc\] main2main: upgrade verified vLLM main from 1106 to 1112](#pr-21469)
+- [11-12 18:35 · #21464 \[v0.32.0rc\]\[Doc\]\[BugFix\] Fix truncated model support tables in Chinese docs](#pr-21464)
+- [11-12 18:35 · #21459 \[临时/勿合入\] 验证 karc 线下成员：a3-800i-fed-16 + a2-fed-2 smoke](#pr-21459)
 - [11-12 17:40 · #21709 \[Performance\] Replace padding-mask fills with a single writeback for GLM5.3-Flash decode](#pr-21709)
 - [11-12 17:40 · #21707 \[Refactor\]\[RFork\] Drop Model Runner V1 EPLB bypass paths](#pr-21707)
 - [11-12 17:40 · #21706 feat: add target LM head dynamic quantization for runner V2](#pr-21706)
-- [11-12 17:40 · #21705 \[Feature\] DSpark expert-pool routing for the expert-offload path](#pr-21705)
 - [11-12 17:40 · #21700 \[BugFix\] Surface actionable MemCache driver-version init errors](#pr-21700)
 - [11-12 17:40 · #21636 \[Feature\]\[Stacked\]\[v0.32.0rc\]\[Qwen4Exp\] MRV2 preparation with union GBSA, CPU-sync and RecoverSSM](#pr-21636)
 - [11-12 17:40 · #21587 \[Feature\] Fuse GatingTopK with EPLB expert mapping](#pr-21587)
@@ -30,8 +45,6 @@
 - [11-12 16:59 · #21690 \[BugFix\]\[Feature\] Enable Mooncake V2 layerwise push and preserve allocation blocks](#pr-21690)
 - [11-12 16:59 · #21689 \[CI\] Isolate lint images by branch and add a lightweight tools image](#pr-21689)
 - [11-12 16:59 · #21688 Pcp short prefill all backends](#pr-21688)
-- [11-12 16:59 · #21687 \[Feature\]\[Kimi\] Provision the shared draft embedding on the last PP stage](#pr-21687)
-- [11-12 16:59 · #21686 \[BugFix\] Read quantized checkpoint indexes for RFork model state](#pr-21686)
 - [11-12 16:59 · #21685 \[CI\] add presmoke for CI](#pr-21685)
 - [11-12 16:59 · #21683 \[BugFix\] Allow C8 KV transfer with AscendStore Memcache](#pr-21683)
 - [11-12 16:59 · #21680 \[Feature\]\[MoE\] Add opt-in DSpark expert-pool routing for expert offload](#pr-21680)
@@ -63,7 +76,6 @@
 - [11-12 16:59 · #21630 \[BugFix\]\[SpecDecode\] Support replicated DFlash/DFlash2 execution with PCP on MRV2](#pr-21630)
 - [11-12 16:59 · #21629 \[BugFix\]\[ExampleProxy\] Use round-robin ticket as heap tiebreaker to fix instance load skew](#pr-21629)
 - [11-12 16:59 · #21627 \[Performance\] Integrate union GBSA prefill for Qwen4Exp](#pr-21627)
-- [11-12 16:59 · #21624 \[Feature\]\[Model\] Add Kimi fine-grained projection and shared-expert TP](#pr-21624)
 - [11-12 16:59 · #21623 \[Feature\]\[Engram\] Add local host VMM for shared A3 tables](#pr-21623)
 - [11-12 16:59 · #21622 \[Feature\] Support bilateral DCP in MooncakePushConnector](#pr-21622)
 - [11-12 16:59 · #21621 \[BugFix\]\[DSpark\]\[EPLB\] Fix V4.1 draft expert loading and registration](#pr-21621)
@@ -87,9 +99,87 @@
 - [11-12 16:59 · #21548 \[BugFix\] Allocate Mooncake PD handshake ports dynamically](#pr-21548)
 - [11-12 16:59 · #21546 \[CI\] update cann=9.3.0\_20261110170400](#pr-21546)
 - [11-12 16:59 · #21543 \[Performance\]\[Ops\] Add SwiGLU graph fusion pass](#pr-21543)
-- [11-12 16:59 · #21541 \[Doc\] add doc quality review workflow for docs/source changes](#pr-21541)
+- [11-12 16:59 · #21530 \[BugFix\]\[v0.32.0rc\] Support multi-head QSA cache stores](#pr-21530)
+- [11-12 16:59 · #21526 \[Performance\]\[Kernel\] Fuse DeepSeek-V4.1 indexer prologue on Ascend A2/A3](#pr-21526)
+- [11-12 16:59 · #21524 \[Performance\] Add experimental V2 MTP greedy verification](#pr-21524)
+- [11-12 16:59 · #21523 \[Feature\]\[MoE\] Integrate MegaMoeLowLatency operator](#pr-21523)
+- [11-12 16:59 · #21521 Upgrade/cann v0.32](#pr-21521)
+- [11-12 16:59 · #21520 \[BugFix\] Defer accepted-token sync for async Mamba decode](#pr-21520)
+- [11-12 16:59 · #21519 \[Feature\]\[Model\] Support DeepSeek-V4.1 vision encoder ACL graphs](#pr-21519)
+- [11-12 16:59 · #21518 \[Performance\]\[SpecDecode\] Fix DFlash context tile width to avoid per-bucket Triton recompilation](#pr-21518)
+- [11-12 16:59 · #21517 \[Ops\]\[Feature\] Support pipeline parallelism on prefill side for Mooncake layerwise connector](#pr-21517)
+- [11-12 16:59 · #21516 \[BugFix\]\[Quantization\] Reject native block FP8 on unsupported devices](#pr-21516)
+- [11-12 16:59 · #21513 \[Doc\] Add deepseek\_v41\_qli\_candidate to nav and fix FAQ anchor](#pr-21513)
+- [11-12 16:59 · #21512 \[Perf\]\[SpecDecode\] Use a fixed context tile width in the DFlash input launcher](#pr-21512)
+- [11-12 16:59 · #21511 \[Feature\]\[DSV4.1\] Add PIECEWISE runtime support](#pr-21511)
+- [11-12 16:59 · #21510 \[Attention\]\[Feature\] Support TP × PCP KDA sharding for GLM-5.3-Flash](#pr-21510)
+- [11-12 16:59 · #21508 \[Feature\]\[A5\] Add INT8 and MXFP8 quantized all-reduce backends](#pr-21508)
+- [11-12 16:59 · #21506 \[v0.32.0rc\]\[Ops\]\[BugFix\] Validate RecoverSSM speculative staging count](#pr-21506)
+- [11-12 16:59 · #21502 \[Feature\]\[Performance\] Support InternLM2-20B-Chat and dispatch scaled RoPE variants to the NPU kernel](#pr-21502)
+- [11-12 16:59 · #21500 \[BugFix\] Reap stale opc locks and cap build parallelism by cgroup memory limit](#pr-21500)
+- [11-12 16:59 · #21496 fix: decouple GDN RecoverSSM from KDA builder to support DSpark on GD…](#pr-21496)
+- [11-12 16:59 · #21495 \[Feature\]\[Model\] Add opt-in MiniMax M3 Union prefill with frozen policy routing](#pr-21495)
+- [11-12 16:59 · #21493 \[临时/勿合入\] a3-800i fed-2 / fed-4 各跑 3 个用例（验证 runner 作业 pod）](#pr-21493)
+- [11-12 16:59 · #21492 \[Feature\]\[Observability\] Add M4 token-repeat detection](#pr-21492)
+- [11-12 16:59 · #21490 \[临时/勿合入\] 全量 A2/A3 业务选测跑 karc fed runner（对齐 #20716）](#pr-21490)
+- [11-12 16:59 · #21489 \[Test\]\[Feature\] Add GLM-5.3 W4A4C8 MTP coverage on A5](#pr-21489)
+- [11-12 16:59 · #21482 \[BugFix\] Validate EPLB intervals are positive and fix config error messages](#pr-21482)
+- [11-12 16:59 · #21480 \[Cherry-pick\]\[releases/v0.32.0rc\]\[CI\]\[BugFix\] Skip CANN 9.2.x custom-op .so validation in A5 wheel build (from #21479)](#pr-21480)
+- [11-12 16:59 · #21479 \[CI\]\[BugFix\] Skip CANN 9.2.x custom-op .so validation in A5 wheel build](#pr-21479)
+- [11-12 16:59 · #21468 \[Performance\] Skip attention output write-back when the backend returns the same tensor](#pr-21468)
+- [11-12 16:59 · #21467 \[Performance\] Avoid pre-zeroing fully overwritten GDN output rows](#pr-21467)
+- [11-12 16:59 · #21466 \[Performance\] Consume strided BA inputs directly in GDN gating](#pr-21466)
+- [11-12 16:59 · #21465 \[Performance\] Produce cumulative expert boundaries for local MXFP8 routing](#pr-21465)
 
 ## 当前关注
+
+<a id="pr-21717"></a>
+
+### [#21717 · \[CI\] Restore A5 multi-node nightly test cases](https://github.com/vllm-project/vllm-ascend/pull/21717)
+
+恢复 A5 多节点 nightly 测试配置，重新启用 DeepSeek、GLM 和 Qwen 的五组双节点用例。
+
+**CI：** 未知 · **改动：** +22 / -22 · **最后提交：** 11-12 18:06
+
+<a id="pr-21716"></a>
+
+### [#21716 · \[临时/勿合入\] ci: route Nightly-A2 cases to offline-cluster runner labels](https://github.com/vllm-project/vllm-ascend/pull/21716)
+
+将 A2 单节点性能与精度测试的 nightly、PR-only runner 配置切换到 fed-karc 集群，覆盖 1、2、4、8 卡规格。
+
+**CI：** 未知 · **改动：** +14 / -14 · **最后提交：** 11-12 18:07
+
+<a id="pr-21715"></a>
+
+### [#21715 · \[Performance\] Fuse matmul-collective ops for dense sequence parallelism (MC2)](https://github.com/vllm-project/vllm-ascend/pull/21715)
+
+补充发布说明，记录稠密模型序列并行将 all-gather、reduce-scatter 融合进 GEMM 的适用条件，以及图捕获支持与回退限制。
+
+**CI：** 未知 · **改动：** +1649 / -29 · **最后提交：** 11-12 17:57
+
+<a id="pr-21714"></a>
+
+### [#21714 · \[Refactor\]\[MRV2\] Adopt EPLB policy and model-state hooks](https://github.com/vllm-project/vllm-ascend/pull/21714)
+
+更新经验证的 vLLM 主分支提交，并同步 EPLB 设计文档和发布说明中的接口依赖、默认 stair 策略说明；同时调整示例启动脚本的类型检查标记。
+
+**CI：** 未知 · **改动：** +623 / -867 · **最后提交：** 11-12 18:23 · **Draft**
+
+<a id="pr-21713"></a>
+
+### [#21713 · \[Doc\]soc\_version and soc\_series names refresh](https://github.com/vllm-project/vllm-ascend/pull/21713)
+
+统一五份注意力算子 README 中 Ascend SoC 型号的大小写和命名写法，所选变更为文档修正。
+
+**CI：** 未知 · **改动：** +7 / -7 · **最后提交：** 11-12 17:57
+
+<a id="pr-21712"></a>
+
+### [#21712 · \[Doc\]\[Misc\] Document Ascend Docker Runtime container setup](https://github.com/vllm-project/vllm-ascend/pull/21712)
+
+在安装及快速入门文档中补充可选的 Ascend Docker Runtime 配置、验证和容器启动示例，说明 NPU 可见性、设备映射及额外挂载要求。
+
+**CI：** 未知 · **改动：** +80 / -1 · **最后提交：** 11-12 17:53
 
 <a id="pr-21709"></a>
 
@@ -119,9 +209,9 @@
 
 ### [#21705 · \[Feature\] DSpark expert-pool routing for the expert-offload path](https://github.com/vllm-project/vllm-ascend/pull/21705)
 
-把 expert-offload A5 测试加入精选 CI、设置 a5-4 runner 与预计耗时，并新增 CPU 单测夹具；配置文档补充 DSpark expert-pool 路由及图捕获参数示例。
+将 A5 expert-offload 测试接入选测、预计耗时和 runner 配置，并补充 DSpark expert-pool 配置说明与 CPU 单测辅助夹具。
 
-**CI：** 未知 · **改动：** +2852 / -6 · **最后提交：** 11-12 17:26
+**CI：** 未知 · **改动：** +2871 / -6 · **最后提交：** 11-12 18:13
 
 <a id="pr-21701"></a>
 
@@ -129,7 +219,7 @@
 
 临时精简 PR E2E 工作流，将两个四卡流水线并行用例固定到 karc 专用 A3 runner，验证工作区同步问题；PR 明确标注勿合入。
 
-**CI：** 运行中 · **改动：** +70 / -808 · **最后提交：** 11-12 16:27
+**CI：** 未知 · **改动：** +70 / -808 · **最后提交：** 11-12 16:27
 
 <a id="pr-21700"></a>
 
@@ -145,7 +235,7 @@
 
 为 v0.32.0rc 新增 A5 UBX 的 Ubuntu 和 openEuler Dockerfile，明确暂用基础镜像及后续 CANN 包切换点。
 
-**CI：** 通过 · **改动：** +419 / -0 · **最后提交：** 11-12 16:10
+**CI：** 未知 · **改动：** +419 / -0 · **最后提交：** 11-12 16:10
 
 <a id="pr-21697"></a>
 
@@ -153,7 +243,7 @@
 
 新增 Qwen3.8 text-only IPC 权重传输的公共测试支持、运行准备工具与设备空闲检查，并补充工具单测和使用文档。
 
-**CI：** 失败（ci-gate） · **改动：** +1202 / -39 · **最后提交：** 11-12 16:12
+**CI：** 未知 · **改动：** +1202 / -39 · **最后提交：** 11-12 16:12
 
 <a id="pr-21695"></a>
 
@@ -161,7 +251,7 @@
 
 修复 PO 提取与翻译对多行表头的处理，拒绝被截断的翻译响应，并为 MkDocs 增加合并单元格表格扩展和写作说明。
 
-**CI：** 通过 · **改动：** +114 / -226 · **最后提交：** 11-12 16:00
+**CI：** 未知 · **改动：** +114 / -226 · **最后提交：** 11-12 16:00
 
 <a id="pr-21694"></a>
 
@@ -169,7 +259,7 @@
 
 在仓库根目录提交两份补丁和 OOM 分析说明，涉及 MiniMax PP 缓存分配及 vLLM 校验；这些根目录文件尚不在排除范围内。
 
-**CI：** 失败 · **改动：** +877 / -3 · **最后提交：** 10-28 17:23
+**CI：** 未知 · **改动：** +877 / -3 · **最后提交：** 10-28 17:23
 
 <a id="pr-21693"></a>
 
@@ -177,7 +267,7 @@
 
 关注范围内新增发布说明，记录 Qwen3.8-Flash-Next 的 MRV2 prefill context parallel 支持；本次仅因 release notes 纳入。
 
-**CI：** 失败（ci-gate） · **改动：** +697 / -65 · **最后提交：** 11-12 15:47
+**CI：** 未知 · **改动：** +697 / -65 · **最后提交：** 11-12 15:47
 
 <a id="pr-21690"></a>
 
@@ -185,7 +275,7 @@
 
 补充 MooncakeConnectorV2 逐层 push 的配置示例、默认行为及 MultiConnector 注意事项，并增加发布说明。
 
-**CI：** 失败（ci-gate） · **改动：** +52 / -9 · **最后提交：** 11-12 15:24
+**CI：** 未知 · **改动：** +52 / -9 · **最后提交：** 11-12 15:24
 
 <a id="pr-21689"></a>
 
@@ -193,7 +283,7 @@
 
 按目标分支隔离 lint 镜像，并新增轻量 lite-tools 镜像供测试选择、缓存准备和文档任务使用；配套调整镜像构建流程与维护说明。
 
-**CI：** 失败（ci-gate） · **改动：** +278 / -97 · **最后提交：** 11-12 15:34
+**CI：** 未知 · **改动：** +278 / -97 · **最后提交：** 11-12 15:34
 
 <a id="pr-21688"></a>
 
@@ -201,23 +291,23 @@
 
 补充 context parallel 开发设计文档，说明缓存单 token 尾部在 PCP decode request sharding 下的处理边界。
 
-**CI：** 失败（ci-gate） · **改动：** +546 / -63 · **最后提交：** 11-12 15:12 · **Draft**
+**CI：** 未知 · **改动：** +546 / -63 · **最后提交：** 11-12 15:12 · **Draft**
 
 <a id="pr-21687"></a>
 
 ### [#21687 · \[Feature\]\[Kimi\] Provision the shared draft embedding on the last PP stage](https://github.com/vllm-project/vllm-ascend/pull/21687)
 
-关注范围内新增发布说明，记录 Kimi DSpark 在最后 PP stage 共享目标 embedding 的支持；本次仅因 release notes 纳入。
+补充发布说明，记录 DSpark 复用目标模型输入 embedding，以及 Kimi 在最后一个流水线阶段复用 embedding 分片以避免重复加载。
 
-**CI：** 失败（ci-gate） · **改动：** +218 / -1 · **最后提交：** 11-12 15:05
+**CI：** 未知 · **改动：** +500 / -19 · **最后提交：** 11-12 18:23
 
 <a id="pr-21686"></a>
 
 ### [#21686 · \[BugFix\] Read quantized checkpoint indexes for RFork model state](https://github.com/vllm-project/vllm-ascend/pull/21686)
 
-更新 RFork 中文文档，说明量化 checkpoint 索引的选择、回退读取及元数据不可读时的行为。
+更新 rfork 中文文档，说明优先使用默认 checkpoint 索引、再选择唯一匹配的量化索引，以及无法确定索引时扫描 safetensors 头部的回退顺序。
 
-**CI：** 失败（ci-gate） · **改动：** +194 / -26 · **最后提交：** 11-12 16:18
+**CI：** 未知 · **改动：** +155 / -26 · **最后提交：** 11-12 17:33
 
 <a id="pr-21685"></a>
 
@@ -225,7 +315,7 @@
 
 新增 /presmoke 镜像预构建及 /nightly --presmoke 消费路径，以独立仓库和标签隔离镜像，并补充 nightly CI 使用文档。
 
-**CI：** 通过 · **改动：** +275 / -53 · **最后提交：** 11-12 14:57
+**CI：** 未知 · **改动：** +275 / -53 · **最后提交：** 11-12 14:57
 
 <a id="pr-21683"></a>
 
@@ -233,7 +323,7 @@
 
 关注范围内新增发布说明，记录 AscendStore Memcache 的 C8 KV transfer 启动检查修复；本次仅因 release notes 纳入。
 
-**CI：** 失败（ci-gate） · **改动：** +77 / -10 · **最后提交：** 11-12 14:56
+**CI：** 未知 · **改动：** +77 / -10 · **最后提交：** 11-12 14:56
 
 <a id="pr-21680"></a>
 
@@ -241,7 +331,7 @@
 
 将 expert-offload A5 用例加入 CI 路由和耗时配置，新增 CPU 单测辅助 fixture，并补充 DSpark expert-pool 的配置说明。
 
-**CI：** 失败（ci-gate） · **改动：** +2630 / -6 · **最后提交：** 11-12 15:35 · **Draft**
+**CI：** 未知 · **改动：** +2630 / -6 · **最后提交：** 11-12 15:35 · **Draft**
 
 <a id="pr-21679"></a>
 
@@ -249,7 +339,7 @@
 
 关注范围内新增发布说明，记录 shared-expert Down 投影前的 padding 优化；本次仅因 release notes 纳入。
 
-**CI：** 失败（ci-gate） · **改动：** +774 / -17 · **最后提交：** 11-12 14:44 · **Draft**
+**CI：** 未知 · **改动：** +774 / -17 · **最后提交：** 11-12 14:44 · **Draft**
 
 <a id="pr-21673"></a>
 
@@ -257,7 +347,7 @@
 
 修改 PD 示例代理，先重组网络分块再解析 SSE/JSON，保留流式与非流式响应中的缓存使用统计；同步补充 Mooncake 多节点教程。
 
-**CI：** 失败（ci-gate） · **改动：** +243 / -24 · **最后提交：** 11-12 13:07
+**CI：** 未知 · **改动：** +243 / -24 · **最后提交：** 11-12 13:07
 
 <a id="pr-21672"></a>
 
@@ -265,7 +355,7 @@
 
 更新 v0.32.0rc 的 MiniMax-M3.1-Flash 中文翻译，澄清不同设备和 PD 角色下的 draft 图执行及 KV cache 配置。
 
-**CI：** 通过 · **改动：** +55 / -60 · **最后提交：** 11-12 12:21
+**CI：** 未知 · **改动：** +55 / -60 · **最后提交：** 11-12 12:21
 
 <a id="pr-21671"></a>
 
@@ -273,7 +363,7 @@
 
 关注范围内新增发布说明，记录 DSpark FULL 图元数据的 query boundary 一致性修复；本次仅因 release notes 纳入。
 
-**CI：** 失败（ci-gate） · **改动：** +119 / -74 · **最后提交：** 11-12 12:09 · **Draft**
+**CI：** 未知 · **改动：** +119 / -74 · **最后提交：** 11-12 12:09 · **Draft**
 
 <a id="pr-21670"></a>
 
@@ -281,7 +371,7 @@
 
 在 additional\_config 配置表中加入 shared\_expert\_tensor\_parallel\_size 的说明和入口链接，并增加发布说明。
 
-**CI：** 失败（ci-gate） · **改动：** +702 / -61 · **最后提交：** 11-12 12:17 · **Draft**
+**CI：** 未知 · **改动：** +702 / -61 · **最后提交：** 11-12 12:17 · **Draft**
 
 <a id="pr-21669"></a>
 
@@ -289,7 +379,7 @@
 
 关注范围内新增发布说明，记录 MiniMax-M3.1 indexer DCP 实验性配置及 PD 使用限制；本次仅因 release notes 纳入。
 
-**CI：** 失败（ci-gate） · **改动：** +447 / -9 · **最后提交：** 11-12 12:02 · **Draft**
+**CI：** 未知 · **改动：** +447 / -9 · **最后提交：** 11-12 12:02 · **Draft**
 
 <a id="pr-21668"></a>
 
@@ -297,7 +387,7 @@
 
 关注范围内新增发布说明，记录 Ascend 上 draft lm\_head FP8 量化支持和非 MXFP8 设备兼容修复；未涉及 CI 框架变更。
 
-**CI：** 失败（ci-gate） · **改动：** +1325 / -25 · **最后提交：** 11-12 15:28
+**CI：** 未知 · **改动：** +1325 / -25 · **最后提交：** 11-12 15:28
 
 <a id="pr-21664"></a>
 
@@ -305,7 +395,7 @@
 
 关注范围内新增发布说明，记录 Qwen PLE 权重固定在主机内存时的 Ascend UVA 启动修复；本次仅因 release notes 纳入。
 
-**CI：** 失败（ci-gate） · **改动：** +69 / -0 · **最后提交：** 11-12 11:45 · **Draft**
+**CI：** 未知 · **改动：** +69 / -0 · **最后提交：** 11-12 11:45 · **Draft**
 
 <a id="pr-21663"></a>
 
@@ -313,7 +403,7 @@
 
 新增 L2 pHash 优化与接口迁移的开发文档，说明 band 配置、阈值约束及 CPU 像素处理路径。
 
-**CI：** 失败（ci-gate） · **改动：** +4164 / -44 · **最后提交：** 11-12 11:32
+**CI：** 未知 · **改动：** +4164 / -44 · **最后提交：** 11-12 11:32
 
 <a id="pr-21661"></a>
 
@@ -321,7 +411,7 @@
 
 临时精简 PR E2E 工作流，将两个四卡流水线并行用例固定到 karc 专用 A3 runner，用于验证工作区同步问题；PR 明确标注勿合入。
 
-**CI：** 失败 · **改动：** +70 / -808 · **最后提交：** 11-12 11:29
+**CI：** 未知 · **改动：** +70 / -808 · **最后提交：** 11-12 11:29
 
 <a id="pr-21660"></a>
 
@@ -329,7 +419,7 @@
 
 关注范围内新增发布说明草稿，记录 A3 上 rotated Engram gate 融合；片段的 PR 编号仍待填写。
 
-**CI：** 失败（ci-gate） · **改动：** +186 / -28 · **最后提交：** 11-12 10:24
+**CI：** 未知 · **改动：** +186 / -28 · **最后提交：** 11-12 10:24
 
 <a id="pr-21659"></a>
 
@@ -337,7 +427,7 @@
 
 关注范围内新增发布说明，记录 DeepSeek-V4.1 在 A3 上的 metadata 多流执行支持；本次仅因 release notes 纳入。
 
-**CI：** 失败（ci-gate） · **改动：** +258 / -28 · **最后提交：** 11-12 11:48 · **Draft**
+**CI：** 未知 · **改动：** +258 / -28 · **最后提交：** 11-12 11:48 · **Draft**
 
 <a id="pr-21657"></a>
 
@@ -345,7 +435,7 @@
 
 在 nightly 配置中加入 Kimi-K3-W4A8-A3-1M-PD 八卡用例，指向已有模型测试配置目录。
 
-**CI：** 通过 · **改动：** +18 / -14 · **最后提交：** 11-12 16:10
+**CI：** 未知 · **改动：** +18 / -14 · **最后提交：** 11-12 16:10
 
 <a id="pr-21655"></a>
 
@@ -353,7 +443,7 @@
 
 关注范围内新增发布说明，记录 A5 recurrent GDN 预处理融合及重载后 gate bias 刷新；未涉及 CI 框架变更。
 
-**CI：** 失败（ci-gate） · **改动：** +405 / -11 · **最后提交：** 11-12 11:42 · **Draft**
+**CI：** 未知 · **改动：** +405 / -11 · **最后提交：** 11-12 11:42 · **Draft**
 
 <a id="pr-21654"></a>
 
@@ -361,7 +451,7 @@
 
 新增 QSA union 的算子端到端验证，补充 v0.32.0rc 中 QSA/MRV2 性能改动的发布说明。
 
-**CI：** 失败（ci-gate） · **改动：** +2223 / -173 · **最后提交：** 11-12 10:55 · **Draft**
+**CI：** 未知 · **改动：** +2223 / -173 · **最后提交：** 11-12 10:55 · **Draft**
 
 <a id="pr-21653"></a>
 
@@ -369,7 +459,7 @@
 
 新增 A5 UBX 的 Ubuntu 与 openEuler Dockerfile，并接入定时和 nightly 镜像构建矩阵；同时调整基础镜像版本解析和相关依赖安装。
 
-**CI：** 通过 · **改动：** +451 / -17 · **最后提交：** 11-12 14:04
+**CI：** 未知 · **改动：** +451 / -17 · **最后提交：** 11-12 14:04
 
 <a id="pr-21652"></a>
 
@@ -377,7 +467,7 @@
 
 在 additional\_config 指南中补充 weight\_nz\_mode=2 的适用范围和默认行为，并增加对应发布说明。
 
-**CI：** 失败（ci-gate） · **改动：** +125 / -17 · **最后提交：** 11-12 10:50
+**CI：** 未知 · **改动：** +125 / -17 · **最后提交：** 11-12 10:50
 
 <a id="pr-21648"></a>
 
@@ -385,7 +475,7 @@
 
 修正 DeepSeek-V4.1-Flash 中文翻译中的 DP 启动器标题锚点，保持教程内跳转链接一致。
 
-**CI：** 通过 · **改动：** +6 / -6 · **最后提交：** 11-12 10:07
+**CI：** 未知 · **改动：** +6 / -6 · **最后提交：** 11-12 10:07
 
 <a id="pr-21645"></a>
 
@@ -393,7 +483,7 @@
 
 关注范围内新增发布说明，记录 MiniMax DSpark 图执行的 CANN FlashAttn 兼容修复；本次仅因 release notes 纳入。
 
-**CI：** 失败（ci-gate） · **改动：** +240 / -1 · **最后提交：** 11-12 10:09 · **Draft**
+**CI：** 未知 · **改动：** +240 / -1 · **最后提交：** 11-12 10:09 · **Draft**
 
 <a id="pr-21643"></a>
 
@@ -401,7 +491,7 @@
 
 更新 MkDocs 导航和中英文标题映射，将编码器缓存卸载文档接入站点导航。
 
-**CI：** 失败（ci-gate） · **改动：** +549 / -65 · **最后提交：** 11-12 10:01
+**CI：** 未知 · **改动：** +549 / -65 · **最后提交：** 11-12 10:01
 
 <a id="pr-21639"></a>
 
@@ -409,7 +499,7 @@
 
 关注范围内新增发布说明，记录兼容 vLLM 源码版本的 KV cache helper 导入修复；本次仅因 release notes 纳入。
 
-**CI：** 失败（ci-gate） · **改动：** +88 / -11 · **最后提交：** 11-12 08:37 · **Draft**
+**CI：** 未知 · **改动：** +88 / -11 · **最后提交：** 11-12 08:37 · **Draft**
 
 <a id="pr-21638"></a>
 
@@ -417,7 +507,7 @@
 
 在 CMake 中按已安装 HIXL 条件构建并安装原生共享库，新增无需真实 NPU 的 ACL/HIXL 替身测试工具及运行说明。
 
-**CI：** 失败（ci-gate） · **改动：** +4569 / -3 · **最后提交：** 11-12 08:53 · **Draft**
+**CI：** 未知 · **改动：** +4569 / -3 · **最后提交：** 11-12 08:53 · **Draft**
 
 <a id="pr-21637"></a>
 
@@ -425,7 +515,7 @@
 
 为 PD 示例代理增加缺失 prompt-token 明细的一次性告警，并在 EvalScope 指南中说明缓存命中率为零时的启动参数排查方法。
 
-**CI：** 通过 · **改动：** +208 / -5 · **最后提交：** 11-12 02:12
+**CI：** 未知 · **改动：** +208 / -5 · **最后提交：** 11-12 02:12
 
 <a id="pr-21636"></a>
 
@@ -441,7 +531,7 @@
 
 补充 Qwen GDN RecoverSSM 的开发设计文档及配置限制，并新增 QSA union 的算子端到端验证和发布说明。
 
-**CI：** 失败 · **改动：** +6459 / -886 · **最后提交：** 11-12 08:59
+**CI：** 未知 · **改动：** +6459 / -886 · **最后提交：** 11-12 08:59
 
 <a id="pr-21631"></a>
 
@@ -449,7 +539,7 @@
 
 精简 DeepSeek-V4-Flash 的 Ascend recipe overlay，固定 A3 容器镜像并补充量化、PD 就绪和清理说明。
 
-**CI：** 通过 · **改动：** +37 / -149 · **最后提交：** 11-11 23:21
+**CI：** 未知 · **改动：** +37 / -149 · **最后提交：** 11-11 23:21
 
 <a id="pr-21630"></a>
 
@@ -457,7 +547,7 @@
 
 新增发布说明，记录 Model Runner V2 中 PCP 对复制式 DFlash/DFlash2 草稿的支持，以及词表分片候选合并和草稿 EPLB 处理；当前关注范围命中的是 release notes。
 
-**CI：** 运行中 · **改动：** +383 / -48 · **最后提交：** 11-12 16:53
+**CI：** 未知 · **改动：** +383 / -48 · **最后提交：** 11-12 16:53
 
 <a id="pr-21629"></a>
 
@@ -465,7 +555,7 @@
 
 调整 PD 负载均衡示例代理的堆排序，在负载相同时使用轮转票号分配请求，避免固定实例持续占优。
 
-**CI：** 失败 · **改动：** +12 / -4 · **最后提交：** 11-11 21:59
+**CI：** 未知 · **改动：** +12 / -4 · **最后提交：** 11-11 21:59
 
 <a id="pr-21627"></a>
 
@@ -479,9 +569,9 @@
 
 ### [#21624 · \[Feature\]\[Model\] Add Kimi fine-grained projection and shared-expert TP](https://github.com/vllm-project/vllm-ascend/pull/21624)
 
-配置文档新增 shared\_expert\_tensor\_parallel\_size 及其运行限制，并补充对应发布说明；投机解码单测的配置夹具增加 embedding\_tensor\_parallel\_size。
+补充共享专家张量并行参数的默认值和适用约束、相关发布说明，并为投机解码测试配置夹具加入 embedding 张量并行字段。
 
-**CI：** 未知 · **改动：** +1600 / -88 · **最后提交：** 11-12 16:36 · **Draft**
+**CI：** 未知 · **改动：** +1777 / -95 · **最后提交：** 11-12 18:28 · **Draft**
 
 <a id="pr-21623"></a>
 
@@ -687,6 +777,294 @@
 
 ### [#21541 · \[Doc\] add doc quality review workflow for docs/source changes](https://github.com/vllm-project/vllm-ascend/pull/21541)
 
-新增文档质量评测 workflow 及编排脚本，结合规则检查与 LLM 评测生成报告，并维护总结评论和 diff 行内评论；同仓 PR 与 fork PR 使用不同触发门控。
+新增文档质量评估工作流及配套脚本，对 Markdown/PO 变更进行规则和模型评估，生成汇总及行内问题评论；支持标签、命令与手动触发，并区分同仓库和 fork 的执行路径。
 
-**CI：** 未知 · **改动：** +1731 / -0 · **最后提交：** 11-12 16:26 · **Draft**
+**CI：** 未知 · **改动：** +2059 / -0 · **最后提交：** 11-12 18:33 · **Draft**
+
+<a id="pr-21536"></a>
+
+### [#21536 · \[Feature\]\[KV Cache\] Prototype FlashStates frontier integration on Ascend (WIP)](https://github.com/vllm-project/vllm-ascend/pull/21536)
+
+加入 FlashStates Ascend 移植说明、vLLM 0.32 补丁集及 frontier 基准脚本和结果，记录混合状态检查点的使用条件、验证范围与硬件限制。
+
+**CI：** 未知 · **改动：** +11029 / -0 · **最后提交：** 11-11 22:04
+
+<a id="pr-21530"></a>
+
+### [#21530 · \[BugFix\]\[v0.32.0rc\] Support multi-head QSA cache stores](https://github.com/vllm-project/vllm-ascend/pull/21530)
+
+补充发布说明，记录 QSA KV-cache 写入对多个本地 KV head 的支持，覆盖张量并行为 1 的流水线部署场景。
+
+**CI：** 未知 · **改动：** +57 / -22 · **最后提交：** 11-11 12:06 · **Draft**
+
+<a id="pr-21526"></a>
+
+### [#21526 · \[Performance\]\[Kernel\] Fuse DeepSeek-V4.1 indexer prologue on Ascend A2/A3](https://github.com/vllm-project/vllm-ascend/pull/21526)
+
+新增 A2/A3 的 fused\_indexer\_prologue 算子，将 DeepSeek-V4.1 的 key 投影、归一化、RoPE、INT8 量化和分页缓存写入合并，并接入构建、Torch 绑定与元信息注册。
+
+**CI：** 未知 · **改动：** +1136 / -17 · **最后提交：** 11-11 14:25
+
+<a id="pr-21524"></a>
+
+### [#21524 · \[Performance\] Add experimental V2 MTP greedy verification](https://github.com/vllm-project/vllm-ascend/pull/21524)
+
+补充发布说明，记录默认关闭、需显式启用的 ModelRunnerV2 MTP 贪心验证路径，以及不支持的采样配置所使用的回退行为。
+
+**CI：** 未知 · **改动：** +502 / -0 · **最后提交：** 11-11 11:40
+
+<a id="pr-21523"></a>
+
+### [#21523 · \[Feature\]\[MoE\] Integrate MegaMoeLowLatency operator](https://github.com/vllm-project/vllm-ascend/pull/21523)
+
+补充 Mega MoE 低延迟及融合 gather 参数文档，说明 Ascend 950 算子路径、默认值、HCCL 配置与不兼容组合。
+
+**CI：** 未知 · **改动：** +483 / -15 · **最后提交：** 11-11 11:33
+
+<a id="pr-21521"></a>
+
+### [#21521 · Upgrade/cann v0.32](https://github.com/vllm-project/vllm-ascend/pull/21521)
+
+升级 CANN 分支的 vLLM 0.32 构建环境，调整容器基础镜像、算子包及 Python 依赖，并同步自定义算子构建列表。已核对的工程改动还包括镜像构建信息汇总、CI action 暂存脚本和主机内存注册能力检测。
+
+**CI：** 未知 · **改动：** +235133 / -103646 · **最后提交：** 11-11 15:21
+
+<a id="pr-21520"></a>
+
+### [#21520 · \[BugFix\] Defer accepted-token sync for async Mamba decode](https://github.com/vllm-project/vllm-ascend/pull/21520)
+
+补充发布说明，记录异步投机解码中延后读取 Mamba 已接受 token 的 CPU 快照，以同步正确的接受数量。
+
+**CI：** 未知 · **改动：** +109 / -11 · **最后提交：** 11-11 11:25 · **Draft**
+
+<a id="pr-21519"></a>
+
+### [#21519 · \[Feature\]\[Model\] Support DeepSeek-V4.1 vision encoder ACL graphs](https://github.com/vllm-project/vllm-ascend/pull/21519)
+
+新增 DeepSeek-V4.1 多模态 encoder 图捕获开发说明及发布说明，描述 packed ViT/aligner 图的启用方式、预算限制、eager 回退和 NPU 验证要求。
+
+**CI：** 未知 · **改动：** +137 / -5 · **最后提交：** 11-11 11:17
+
+<a id="pr-21518"></a>
+
+### [#21518 · \[Performance\]\[SpecDecode\] Fix DFlash context tile width to avoid per-bucket Triton recompilation](https://github.com/vllm-project/vllm-ascend/pull/21518)
+
+补充发布说明，记录 DFlash/DSpark 使用固定 tile 宽度，避免不同图桶重复触发 Triton 编译停顿。
+
+**CI：** 未知 · **改动：** +236 / -5 · **最后提交：** 11-11 11:21
+
+<a id="pr-21517"></a>
+
+### [#21517 · \[Ops\]\[Feature\] Support pipeline parallelism on prefill side for Mooncake layerwise connector](https://github.com/vllm-project/vllm-ascend/pull/21517)
+
+补充发布说明，记录 Mooncake prefill 流水线并行按阶段传输所属层、由末阶段通知完成的行为，并注明不支持 decode 流水线并行。
+
+**CI：** 未知 · **改动：** +259 / -5 · **最后提交：** 11-11 15:26 · **Draft**
+
+<a id="pr-21516"></a>
+
+### [#21516 · \[BugFix\]\[Quantization\] Reject native block FP8 on unsupported devices](https://github.com/vllm-project/vllm-ascend/pull/21516)
+
+补充发布说明，记录原生 block-FP8 在不支持的 A2/A3 设备上明确拒绝执行，而非将权重展开为 BF16。
+
+**CI：** 未知 · **改动：** +60 / -57 · **最后提交：** 11-11 11:21 · **Draft**
+
+<a id="pr-21513"></a>
+
+### [#21513 · \[Doc\] Add deepseek\_v41\_qli\_candidate to nav and fix FAQ anchor](https://github.com/vllm-project/vllm-ascend/pull/21513)
+
+在 MkDocs 导航中加入 DeepSeek-V4.1 QLI candidate 开发指南入口。
+
+**CI：** 未知 · **改动：** +2 / -1 · **最后提交：** 11-11 10:54
+
+<a id="pr-21512"></a>
+
+### [#21512 · \[Perf\]\[SpecDecode\] Use a fixed context tile width in the DFlash input launcher](https://github.com/vllm-project/vllm-ascend/pull/21512)
+
+补充发布说明，记录 DFlash 使用固定上下文 tile 宽度，减少随上下文长度变化产生的 Triton JIT 编译停顿。
+
+**CI：** 未知 · **改动：** +160 / -5 · **最后提交：** 11-11 10:36
+
+<a id="pr-21511"></a>
+
+### [#21511 · \[Feature\]\[DSV4.1\] Add PIECEWISE runtime support](https://github.com/vllm-project/vllm-ascend/pull/21511)
+
+新增 DeepSeek V4.1 PIECEWISE 执行设计文档与发布说明，说明图切分边界、decoder replay、Engram 输入准备及 NPU 验证要求；跨层 KV pool 的 PIECEWISE 集成仍未启用。
+
+**CI：** 未知 · **改动：** +591 / -22 · **最后提交：** 11-11 10:34 · **Draft**
+
+<a id="pr-21510"></a>
+
+### [#21510 · \[Attention\]\[Feature\] Support TP × PCP KDA sharding for GLM-5.3-Flash](https://github.com/vllm-project/vllm-ascend/pull/21510)
+
+补充 GLM-5.3-Flash KDA 的发布说明，记录注意力头和循环状态可按 TP 与 PCP 联合分片。
+
+**CI：** 未知 · **改动：** +92 / -40 · **最后提交：** 11-11 10:32 · **Draft**
+
+<a id="pr-21508"></a>
+
+### [#21508 · \[Feature\]\[A5\] Add INT8 and MXFP8 quantized all-reduce backends](https://github.com/vllm-project/vllm-ascend/pull/21508)
+
+扩展量化 all-reduce 配置文档及发布说明，明确 A2 默认 INT8、A5 默认 MXFP8，以及各后端的形状、规模、硬件限制和诊断方法。
+
+**CI：** 未知 · **改动：** +813 / -94 · **最后提交：** 11-11 10:26
+
+<a id="pr-21506"></a>
+
+### [#21506 · \[v0.32.0rc\]\[Ops\]\[BugFix\] Validate RecoverSSM speculative staging count](https://github.com/vllm-project/vllm-ascend/pull/21506)
+
+新增 RecoverSSM 修复说明，记录非法推测解码元数据在图暂存前报告 decode 数量与请求批大小。
+
+**CI：** 未知 · **改动：** +33 / -1 · **最后提交：** 11-11 09:41
+
+<a id="pr-21502"></a>
+
+### [#21502 · \[Feature\]\[Performance\] Support InternLM2-20B-Chat and dispatch scaled RoPE variants to the NPU kernel](https://github.com/vllm-project/vllm-ascend/pull/21502)
+
+把 InternLM2-20B-Chat 加入 nightly 精度任务、模型缓存清单、E2E 精度配置和文档导航，并登记双卡测试预估耗时及发布说明。
+
+**CI：** 未知 · **改动：** +851 / -0 · **最后提交：** 11-11 00:02
+
+<a id="pr-21500"></a>
+
+### [#21500 · \[BugFix\] Reap stale opc locks and cap build parallelism by cgroup memory limit](https://github.com/vllm-project/vllm-ascend/pull/21500)
+
+为自定义算子构建按 cgroup 内存限制设置默认并行度，并在构建前清理已失效的 opc 锁；新增对应工具单测，保留活进程锁。
+
+**CI：** 未知 · **改动：** +136 / -1 · **最后提交：** 11-10 22:45
+
+<a id="pr-21496"></a>
+
+### [#21496 · fix: decouple GDN RecoverSSM from KDA builder to support DSpark on GD…](https://github.com/vllm-project/vllm-ascend/pull/21496)
+
+新增发布说明，记录 GDN RecoverSSM 改为原生元数据构建器，以移除 KDA 调度假设并支持 GDN 混合模型的 MTP 与 DSpark。
+
+**CI：** 未知 · **改动：** +307 / -3 · **最后提交：** 11-10 21:15
+
+<a id="pr-21495"></a>
+
+### [#21495 · \[Feature\]\[Model\] Add opt-in MiniMax M3 Union prefill with frozen policy routing](https://github.com/vllm-project/vllm-ascend/pull/21495)
+
+补充 MiniMax M3 Union prefill 的实验性发布说明，标明默认关闭、冻结路由策略以及额外自定义算子依赖。
+
+**CI：** 未知 · **改动：** +1056 / -26 · **最后提交：** 11-10 21:07 · **Draft**
+
+<a id="pr-21493"></a>
+
+### [#21493 · \[临时/勿合入\] a3-800i fed-2 / fed-4 各跑 3 个用例（验证 runner 作业 pod）](https://github.com/vllm-project/vllm-ascend/pull/21493)
+
+将 PR 工作流临时改为 A3 FED 2 卡与 4 卡 runner 的各 3 个用例冒烟验证，省略常规 lint、CPU UT、推荐选测与标签门禁；文件明确标注勿合入。
+
+**CI：** 未知 · **改动：** +71 / -806 · **最后提交：** 11-10 22:14
+
+<a id="pr-21492"></a>
+
+### [#21492 · \[Feature\]\[Observability\] Add M4 token-repeat detection](https://github.com/vllm-project/vllm-ascend/pull/21492)
+
+新增独立 CPU M4 token-repeat 检测工具，包含 C++ 扩展、Python 适配、词表生成和构建打包配置；同时补充发布说明及 runtime guard 测试辅助锁。
+
+**CI：** 未知 · **改动：** +1935 / -49 · **最后提交：** 11-12 15:30
+
+<a id="pr-21490"></a>
+
+### [#21490 · \[临时/勿合入\] 全量 A2/A3 业务选测跑 karc fed runner（对齐 #20716）](https://github.com/vllm-project/vllm-ascend/pull/21490)
+
+将 PR 工作流临时切换为 FED runner 上的 A2/A3 全量选测，并为 upstream 可复用工作流增加 runner 输入；常规检查与标签门禁被省略，明确标注勿合入。
+
+**CI：** 未知 · **改动：** +54 / -799 · **最后提交：** 11-12 09:39 · **Draft**
+
+<a id="pr-21489"></a>
+
+### [#21489 · \[Test\]\[Feature\] Add GLM-5.3 W4A4C8 MTP coverage on A5](https://github.com/vllm-project/vllm-ascend/pull/21489)
+
+在 nightly 配置中新增 A5 8 卡 GLM-5.3 W4A4C8 MTP 测试任务，关联对应 SIT 模型配置。
+
+**CI：** 未知 · **改动：** +78 / -0 · **最后提交：** 11-10 20:16
+
+<a id="pr-21482"></a>
+
+### [#21482 · \[BugFix\] Validate EPLB intervals are positive and fix config error messages](https://github.com/vllm-project/vllm-ascend/pull/21482)
+
+新增 EPLB 配置修复说明：热度收集和算法执行间隔必须为正，冗余专家数量仍允许为零。
+
+**CI：** 未知 · **改动：** +60 / -4 · **最后提交：** 11-11 10:40
+
+<a id="pr-21481"></a>
+
+### [#21481 · \[CI\] memcache cases](https://github.com/vllm-project/vllm-ascend/pull/21481)
+
+在 weekly 配置中加入 GLM-5.3 与 DeepSeek-V4-Flash 的 Memcache/PD 任务，并补充相关长上下文数据集缓存清单。
+
+**CI：** 未知 · **改动：** +535 / -1 · **最后提交：** 11-12 18:35
+
+<a id="pr-21480"></a>
+
+### [#21480 · \[Cherry-pick\]\[releases/v0.32.0rc\]\[CI\]\[BugFix\] Skip CANN 9.2.x custom-op .so validation in A5 wheel build (from #21479)](https://github.com/vllm-project/vllm-ascend/pull/21480)
+
+在 A5 wheel 构建 Dockerfile 中为 CANN 9.2.x 自定义算子安装增加 --force，跳过缺少构建期 stub 所导致的共享库校验，并验证补丁和产物存在。
+
+**CI：** 未知 · **改动：** +10 / -1 · **最后提交：** 11-10 19:48
+
+<a id="pr-21479"></a>
+
+### [#21479 · \[CI\]\[BugFix\] Skip CANN 9.2.x custom-op .so validation in A5 wheel build](https://github.com/vllm-project/vllm-ascend/pull/21479)
+
+在 A5 wheel 构建 Dockerfile 中为 CANN 9.2.x 自定义算子安装增加 --force，跳过缺少构建期 stub 所导致的共享库校验，并验证补丁和产物存在。
+
+**CI：** 未知 · **改动：** +10 / -1 · **最后提交：** 11-10 19:37
+
+<a id="pr-21469"></a>
+
+### [#21469 · \[Misc\] main2main: upgrade verified vLLM main from 1106 to 1112](https://github.com/vllm-project/vllm-ascend/pull/21469)
+
+更新 CI 验证使用的 vLLM main 固定提交，并适配图调度、KV offload 与 release scheduler 的测试辅助接口；离线 DSD 配置生成器新增按版本约束的 drafter padding 选项。
+
+**CI：** 未知 · **改动：** +3322 / -401 · **最后提交：** 11-12 17:53 · **Draft**
+
+<a id="pr-21468"></a>
+
+### [#21468 · \[Performance\] Skip attention output write-back when the backend returns the same tensor](https://github.com/vllm-project/vllm-ascend/pull/21468)
+
+新增 attention 输出回写微基准，对比冗余复制与返回同一输出张量时跳过复制的路径，并补充对应性能发布说明。
+
+**CI：** 未知 · **改动：** +200 / -2 · **最后提交：** 11-10 18:19 · **Draft**
+
+<a id="pr-21467"></a>
+
+### [#21467 · \[Performance\] Avoid pre-zeroing fully overwritten GDN output rows](https://github.com/vllm-project/vllm-ascend/pull/21467)
+
+新增 GDN 输出初始化微基准，对比完整预清零与仅清零 padding 的路径，并记录避免重复清零的性能变化；脚本不把局部操作耗时当作模型吞吐。
+
+**CI：** 未知 · **改动：** +155 / -10 · **最后提交：** 11-10 18:19 · **Draft**
+
+<a id="pr-21466"></a>
+
+### [#21466 · \[Performance\] Consume strided BA inputs directly in GDN gating](https://github.com/vllm-project/vllm-ascend/pull/21466)
+
+新增 GDN gating 步幅微基准，对比 BA 连续化复制与直接读取原始步幅，并要求显式提供修改前内核作为基线；同时补充性能发布说明。
+
+**CI：** 未知 · **改动：** +273 / -9 · **最后提交：** 11-12 00:40 · **Draft**
+
+<a id="pr-21465"></a>
+
+### [#21465 · \[Performance\] Produce cumulative expert boundaries for local MXFP8 routing](https://github.com/vllm-project/vllm-ascend/pull/21465)
+
+新增 A5 MXFP8 MoE 路由微基准，对比单独 cumsum 与算子直接返回累计专家边界的路径，并补充性能发布说明。
+
+**CI：** 未知 · **改动：** +250 / -6 · **最后提交：** 11-10 18:19 · **Draft**
+
+<a id="pr-21464"></a>
+
+### [#21464 · \[v0.32.0rc\]\[Doc\]\[BugFix\] Fix truncated model support tables in Chinese docs](https://github.com/vllm-project/vllm-ascend/pull/21464)
+
+修正文档翻译提取与翻译器对多层表头、表格分隔符和截断响应的处理，启用多行表格扩展并补充写作指南，避免中文支持矩阵被截断。
+
+**CI：** 通过 · **改动：** +112 / -224 · **最后提交：** 11-12 17:26
+
+<a id="pr-21459"></a>
+
+### [#21459 · \[临时/勿合入\] 验证 karc 线下成员：a3-800i-fed-16 + a2-fed-2 smoke](https://github.com/vllm-project/vllm-ascend/pull/21459)
+
+将 PR 工作流临时改为线下 karc 的 A3 16 卡与 A2 2 卡冒烟测试，并调整可复用测试工作流的代理、依赖镜像、超时及下载并发设置；明确标注勿合入。
+
+**CI：** 失败 · **改动：** +789 / -1466 · **最后提交：** 11-10 17:53 · **Draft**
