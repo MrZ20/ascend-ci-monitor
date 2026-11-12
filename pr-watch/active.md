@@ -1,38 +1,36 @@
 # PR 关注列表
 
-最近刷新：2026-11-12 19:10:52（上海时间）
-当前关注的开放 PR：38
+最近刷新：2026-11-12 19:46:32（上海时间）
+当前关注的开放 PR：36
 范围：最近 30 天有创建、提交、CI、Draft 或目标分支变化证据的开放 PR；普通评论不算活动。
 长期无元数据更新的旧 PR 未逐个追查仅 CI 重跑的活动，本页不代表这类活动已全覆盖。
 
-活动待确认：383 个较早创建、近期 updated_at 变化的开放 PR 尚无最近 30 天有效活动证据，暂不纳入。
+活动待确认：381 个较早创建、近期 updated_at 变化的开放 PR 尚无最近 30 天有效活动证据，暂不纳入。
 
-CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次状态不代表当前结果。
+CI 待刷新：32 个 PR 尚未取得本轮所需的完整检查结果；上次状态不代表当前结果。
 
-覆盖说明：987 个近 30 天范围内的 PR 文件范围或详情待补齐。
+覆盖说明：1000 个近 30 天范围内的 PR 文件范围或详情待补齐。
 
-本轮覆盖缺口：3 项采集未完成；受影响状态显示未知或等待补齐。
+本轮覆盖缺口：35 项采集未完成；受影响状态显示未知或等待补齐。
 
 ## 最近更新（72h）
 
-- [11-12 18:57 · #21541 \[Doc\] add doc quality review workflow for docs/source changes](#pr-21541)
-- [11-12 18:54 · #21481 \[CI\] memcache cases](#pr-21481)
+- [11-12 19:36 · #21712 \[Doc\]\[Misc\] Document Ascend Docker Runtime container setup](#pr-21712)
+- [11-12 19:36 · #21685 \[CI\] add presmoke for CI](#pr-21685)
+- [11-12 19:36 · #21587 \[Feature\] Fuse GatingTopK with EPLB expert mapping](#pr-21587)
+- [11-12 19:36 · #21541 \[Doc\] add doc quality review workflow for docs/source changes](#pr-21541)
+- [11-12 19:36 · #21481 \[CI\] memcache cases](#pr-21481)
 - [11-12 18:35 · #21705 \[Feature\] DSpark expert-pool routing for the expert-offload path](#pr-21705)
 - [11-12 18:35 · #21469 \[Misc\] main2main: upgrade verified vLLM main from 1106 to 1112](#pr-21469)
 - [11-12 18:23 · #21714 \[Refactor\]\[MRV2\] Adopt EPLB policy and model-state hooks](#pr-21714)
 - [11-12 18:12 · #21717 \[CI\] Restore A5 multi-node nightly test cases](#pr-21717)
 - [11-12 18:08 · #21716 \[临时/勿合入\] ci: route Nightly-A2 cases to offline-cluster runner labels](#pr-21716)
-- [11-12 17:53 · #21712 \[Doc\]\[Misc\] Document Ascend Docker Runtime container setup](#pr-21712)
-- [11-12 17:48 · #21464 \[v0.32.0rc\]\[Doc\]\[BugFix\] Fix truncated model support tables in Chinese docs](#pr-21464)
-- [11-12 17:40 · #21587 \[Feature\] Fuse GatingTopK with EPLB expert mapping](#pr-21587)
 - [11-12 16:27 · #21701 \[临时/勿合入\] 验证 karc 专用 4 卡档：a3-800i-fed-karc-4 两用例](#pr-21701)
 - [11-12 16:12 · #21699 \[Feat\]\[Misc\] Add A5 UBX Dockerfiles for v0.32.0rc](#pr-21699)
 - [11-12 16:10 · #21657 \[Test\] kimi-k3 nightly](#pr-21657)
-- [11-12 16:02 · #21695 \[Doc\]\[BugFix\] Fix truncated model support tables in Chinese docs](#pr-21695)
+- [11-12 15:52 · #21680 \[Feature\]\[MoE\] Add opt-in DSpark expert-pool routing for expert offload](#pr-21680)
 - [11-12 15:47 · #21594 \[Feature\]\[MoE\] Support anchor-union activation routing for DSpark and DFlash speculative decoding](#pr-21594)
-- [11-12 15:35 · #21680 \[Feature\]\[MoE\] Add opt-in DSpark expert-pool routing for expert offload](#pr-21680)
 - [11-12 15:34 · #21689 \[CI\] Isolate lint images by branch and add a lightweight tools image](#pr-21689)
-- [11-12 14:58 · #21685 \[CI\] add presmoke for CI](#pr-21685)
 - [11-12 14:04 · #21653 \[Feat\]\[Misc\] Add A5 UBX Dockerfiles for v0.30.0](#pr-21653)
 - [11-12 11:31 · #21607 \[Test\]\[Upstream\]rerun failed test case](#pr-21607)
 - [11-12 11:30 · #21661 \[临时/勿合入\] 验证 karc 专用 4 卡档：a3-800i-fed-karc-4 两用例](#pr-21661)
@@ -45,7 +43,7 @@ CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次�
 - [11-11 14:27 · #21546 \[CI\] update cann=9.3.0\_20261110170400](#pr-21546)
 - [11-11 14:25 · #21526 \[Performance\]\[Kernel\] Fuse DeepSeek-V4.1 indexer prologue on Ascend A2/A3](#pr-21526)
 - [11-11 10:54 · #21513 \[Doc\] Add deepseek\_v41\_qli\_candidate to nav and fix FAQ anchor](#pr-21513)
-- [11-11 00:02 · #21502 \[Feature\]\[Performance\] Support InternLM2-20B-Chat and dispatch scaled RoPE variants to the NPU kernel](#pr-21502)
+- [11-11 00:22 · #21502 \[Feature\]\[Performance\] Support InternLM2-20B-Chat and dispatch scaled RoPE variants to the NPU kernel](#pr-21502)
 - [11-10 22:47 · #21500 \[BugFix\] Reap stale opc locks and cap build parallelism by cgroup memory limit](#pr-21500)
 - [11-10 22:16 · #21479 \[CI\]\[BugFix\] Skip CANN 9.2.x custom-op .so validation in A5 wheel build](#pr-21479)
 - [11-10 22:14 · #21493 \[临时/勿合入\] a3-800i fed-2 / fed-4 各跑 3 个用例（验证 runner 作业 pod）](#pr-21493)
@@ -84,9 +82,9 @@ CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 ### [#21712 · \[Doc\]\[Misc\] Document Ascend Docker Runtime container setup](https://github.com/vllm-project/vllm-ascend/pull/21712)
 
-在安装及快速入门文档中补充可选的 Ascend Docker Runtime 配置、验证和容器启动示例，说明 NPU 可见性、设备映射及额外挂载要求。
+相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +80 / -1 · **最后提交：** 11-12 17:53
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21705"></a>
 
@@ -112,14 +110,6 @@ CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 **CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +419 / -0 · **最后提交：** 11-12 16:10
 
-<a id="pr-21695"></a>
-
-### [#21695 · \[Doc\]\[BugFix\] Fix truncated model support tables in Chinese docs](https://github.com/vllm-project/vllm-ascend/pull/21695)
-
-修复 PO 提取与翻译对多行表头的处理，拒绝被截断的翻译响应，并为 MkDocs 增加合并单元格表格扩展和写作说明。
-
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +114 / -226 · **最后提交：** 11-12 16:00
-
 <a id="pr-21689"></a>
 
 ### [#21689 · \[CI\] Isolate lint images by branch and add a lightweight tools image](https://github.com/vllm-project/vllm-ascend/pull/21689)
@@ -132,9 +122,9 @@ CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 ### [#21685 · \[CI\] add presmoke for CI](https://github.com/vllm-project/vllm-ascend/pull/21685)
 
-新增 /presmoke 镜像预构建及 /nightly --presmoke 消费路径，以独立仓库和标签隔离镜像，并补充 nightly CI 使用文档。
+相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +275 / -53 · **最后提交：** 11-12 14:57
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21680"></a>
 
@@ -142,7 +132,7 @@ CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 将 expert-offload A5 用例加入 CI 路由和耗时配置，新增 CPU 单测辅助 fixture，并补充 DSpark expert-pool 的配置说明。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +2630 / -6 · **最后提交：** 11-12 15:35 · **Draft**
+**CI：** 失败（ci-gate） · **改动：** +2630 / -6 · **最后提交：** 11-12 15:35 · **Draft**
 
 <a id="pr-21661"></a>
 
@@ -212,9 +202,9 @@ CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 ### [#21587 · \[Feature\] Fuse GatingTopK with EPLB expert mapping](https://github.com/vllm-project/vllm-ascend/pull/21587)
 
-为 GatingTopK 原生算子增加可选 EPLB 路由表及形状校验，将专家映射融合到输出阶段；同时将对应 NPU 测试映射到 A3 runner。
+相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +552 / -18 · **最后提交：** 11-12 17:32
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21555"></a>
 
@@ -270,7 +260,7 @@ CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 把 InternLM2-20B-Chat 加入 nightly 精度任务、模型缓存清单、E2E 精度配置和文档导航，并登记双卡测试预估耗时及发布说明。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +851 / -0 · **最后提交：** 11-11 00:02
+**CI：** 失败（ci-gate） · **改动：** +851 / -0 · **最后提交：** 11-11 00:02
 
 <a id="pr-21500"></a>
 
@@ -308,9 +298,9 @@ CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 ### [#21481 · \[CI\] memcache cases](https://github.com/vllm-project/vllm-ascend/pull/21481)
 
-在 weekly 配置中加入 GLM-5.3 与 DeepSeek-V4-Flash 的 Memcache/PD 任务，并补充相关长上下文数据集缓存清单。
+相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；上次完整检查：11-12 18:57 · 通过） · **改动：** +535 / -1 · **最后提交：** 11-12 18:35
+**CI：** 未知（待刷新；上次完整检查：11-12 18:57 · 通过） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21480"></a>
 
@@ -334,15 +324,7 @@ CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 更新 CI 验证使用的 vLLM main 固定提交，并适配图调度、KV offload 与 release scheduler 的测试辅助接口；离线 DSD 配置生成器新增按版本约束的 drafter padding 选项。
 
-**CI：** 未知（待刷新；上次完整检查：11-12 18:57 · 失败（ci-gate）） · **改动：** +3322 / -401 · **最后提交：** 11-12 17:53 · **Draft**
-
-<a id="pr-21464"></a>
-
-### [#21464 · \[v0.32.0rc\]\[Doc\]\[BugFix\] Fix truncated model support tables in Chinese docs](https://github.com/vllm-project/vllm-ascend/pull/21464)
-
-修正文档翻译提取与翻译器对多层表头、表格分隔符和截断响应的处理，启用多行表格扩展并补充写作指南，避免中文支持矩阵被截断。
-
-**CI：** 未知（待刷新；上次完整检查：11-12 18:35 · 通过） · **改动：** +112 / -224 · **最后提交：** 11-12 17:26
+**CI：** 失败（ci-gate） · **改动：** +3322 / -401 · **最后提交：** 11-12 17:53 · **Draft**
 
 <a id="pr-21459"></a>
 
@@ -358,4 +340,4 @@ CI 待刷新：38 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 在夜间CI配置中加入Qwen3与DeepSeek上下文并行组合，并将context-parallel矩阵测试接入accuracy列表和耗时估计。
 
-**CI：** 未知（待刷新；上次完整检查：11-12 18:57 · 失败（ci-gate）） · **改动：** +3721 / -591 · **最后提交：** 11-10 18:22
+**CI：** 失败（ci-gate） · **改动：** +3721 / -591 · **最后提交：** 11-10 18:22
