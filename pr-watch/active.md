@@ -1,18 +1,27 @@
 # PR 关注列表
 
-最近刷新：2026-11-12 17:17:12（上海时间）
-当前关注的开放 PR：43
+最近刷新：2026-11-12 17:58:09（上海时间）
+当前关注的开放 PR：75
 范围：最近 30 天有创建、提交、CI、Draft 或目标分支变化证据的开放 PR；普通评论不算活动。
 长期无元数据更新的旧 PR 未逐个追查仅 CI 重跑的活动，本页不代表这类活动已全覆盖。
 
-活动待确认：423 个较早创建、近期 updated_at 变化的开放 PR 尚无最近 30 天有效活动证据，暂不纳入。
+活动待确认：406 个较早创建、近期 updated_at 变化的开放 PR 尚无最近 30 天有效活动证据，暂不纳入。
 
-覆盖说明：1055 个近 30 天范围内的 PR 文件范围或详情待补齐。
+覆盖说明：1022 个近 30 天范围内的 PR 文件范围或详情待补齐。
+
+本轮覆盖缺口：39 项采集未完成；受影响状态显示未知或等待补齐。
 
 ## 最近更新（72h）
 
+- [11-12 17:40 · #21709 \[Performance\] Replace padding-mask fills with a single writeback for GLM5.3-Flash decode](#pr-21709)
+- [11-12 17:40 · #21707 \[Refactor\]\[RFork\] Drop Model Runner V1 EPLB bypass paths](#pr-21707)
+- [11-12 17:40 · #21706 feat: add target LM head dynamic quantization for runner V2](#pr-21706)
+- [11-12 17:40 · #21705 \[Feature\] DSpark expert-pool routing for the expert-offload path](#pr-21705)
+- [11-12 17:40 · #21700 \[BugFix\] Surface actionable MemCache driver-version init errors](#pr-21700)
+- [11-12 17:40 · #21636 \[Feature\]\[Stacked\]\[v0.32.0rc\]\[Qwen4Exp\] MRV2 preparation with union GBSA, CPU-sync and RecoverSSM](#pr-21636)
+- [11-12 17:40 · #21587 \[Feature\] Fuse GatingTopK with EPLB expert mapping](#pr-21587)
+- [11-12 17:40 · #21584 \[Performance\]\[Kernel\] Share exact radix sorting across BF16 and FP32 candidate packing](#pr-21584)
 - [11-12 16:59 · #21701 \[临时/勿合入\] 验证 karc 专用 4 卡档：a3-800i-fed-karc-4 两用例](#pr-21701)
-- [11-12 16:59 · #21700 \[BugFix\] Surface actionable MemCache driver-version init errors](#pr-21700)
 - [11-12 16:59 · #21699 \[Feat\]\[Misc\] Add A5 UBX Dockerfiles for v0.32.0rc](#pr-21699)
 - [11-12 16:59 · #21697 \[BugFix\] Support Qwen3.8 text-only IPC weight-transfer CI](#pr-21697)
 - [11-12 16:59 · #21695 \[Doc\]\[BugFix\] Fix truncated model support tables in Chinese docs](#pr-21695)
@@ -49,13 +58,70 @@
 - [11-12 16:59 · #21639 \[BugFix\] Select vLLM KV cache helpers by availability](#pr-21639)
 - [11-12 16:59 · #21638 \[Feature\]\[Qwen\] Share PLE tables across Ascend services](#pr-21638)
 - [11-12 16:59 · #21637 \[BugFix\]\[P/D\] Surface missing prompt-token details in the PD proxy](#pr-21637)
-- [11-12 16:59 · #21636 \[Feature\]\[Stacked\]\[v0.32.0rc\]\[Qwen4Exp\] MRV2 preparation with union GBSA, CPU-sync and RecoverSSM](#pr-21636)
 - [11-12 16:59 · #21635 \[Stacked\]\[Qwen4Exp\] MRV2 input preparation with union GBSA, CPU-sync and RecoverSSM](#pr-21635)
 - [11-12 16:59 · #21631 \[Feature\] Add Ascend overlay for deepseek-ai/DeepSeek-V4-Flash](#pr-21631)
 - [11-12 16:59 · #21630 \[BugFix\]\[SpecDecode\] Support replicated DFlash/DFlash2 execution with PCP on MRV2](#pr-21630)
 - [11-12 16:59 · #21629 \[BugFix\]\[ExampleProxy\] Use round-robin ticket as heap tiebreaker to fix instance load skew](#pr-21629)
+- [11-12 16:59 · #21627 \[Performance\] Integrate union GBSA prefill for Qwen4Exp](#pr-21627)
+- [11-12 16:59 · #21624 \[Feature\]\[Model\] Add Kimi fine-grained projection and shared-expert TP](#pr-21624)
+- [11-12 16:59 · #21623 \[Feature\]\[Engram\] Add local host VMM for shared A3 tables](#pr-21623)
+- [11-12 16:59 · #21622 \[Feature\] Support bilateral DCP in MooncakePushConnector](#pr-21622)
+- [11-12 16:59 · #21621 \[BugFix\]\[DSpark\]\[EPLB\] Fix V4.1 draft expert loading and registration](#pr-21621)
+- [11-12 16:59 · #21607 \[Test\]\[Upstream\]rerun failed test case](#pr-21607)
+- [11-12 16:59 · #21605 \[Performance\]\[A3\] Cache row weights for packed DCP LSE combine](#pr-21605)
+- [11-12 16:59 · #21604 \[BugFix\]\[Quantization\] Reject native FP8 checkpoints on non-950 devices](#pr-21604)
+- [11-12 16:59 · #21603 \[Performance\]\[Kernel\] Adapt owner-prefix peer counting on A3](#pr-21603)
+- [11-12 16:59 · #21600 \[BugFix\]\[KVPool\] Report synchronous hybrid load failures by request](#pr-21600)
+- [11-12 16:59 · #21594 \[Feature\]\[MoE\] Support anchor-union activation routing for DSpark and DFlash speculative decoding](#pr-21594)
+- [11-12 16:59 · #21589 \[Performance\] Skip QSA CPU length sync for Ascend builder](#pr-21589)
+- [11-12 16:59 · #21586 \[Performance\]\[Kernel\] Use rectangular tiles for D512 DCP output packing](#pr-21586)
+- [11-12 16:59 · #21580 \[Feature\]\[Attention\] Support quant\_mode=5 pseudo-quant for MTP decode in C8 backend](#pr-21580)
+- [11-12 16:59 · #21575 \[BugFix\] Preserve Mamba checkpoints in consumer chunked prefill](#pr-21575)
+- [11-12 16:59 · #21565 \[Test\]\[Sleep Mode\] Harden RLHF sleep/wake harness timeouts](#pr-21565)
+- [11-12 16:59 · #21557 \[BugFix\]\[v0.32.0rc\] Sync SWA block IDs before KV Pool prefill saves](#pr-21557)
+- [11-12 16:59 · #21555 feat(ci): add /presmoke command for PR-level CANN image presmoke](#pr-21555)
+- [11-12 16:59 · #21554 \[BugFix\]\[Model\] Re-pack Kimi K3.1 Pro KDA conv weight after layerwise reload](#pr-21554)
+- [11-12 16:59 · #21553 \[Doc\]\[Recipe\] Add Ascend overlay for Qwen3-VL-235B-A22B-Instruct](#pr-21553)
+- [11-12 16:59 · #21552 \[Doc\]\[Recipe\] Add Ascend overlay for Qwen3-Next-80B-A3B-Instruct](#pr-21552)
+- [11-12 16:59 · #21549 \[Feature\] Add experimental Kimi KDA RecoverSSM support](#pr-21549)
+- [11-12 16:59 · #21548 \[BugFix\] Allocate Mooncake PD handshake ports dynamically](#pr-21548)
+- [11-12 16:59 · #21546 \[CI\] update cann=9.3.0\_20261110170400](#pr-21546)
+- [11-12 16:59 · #21543 \[Performance\]\[Ops\] Add SwiGLU graph fusion pass](#pr-21543)
+- [11-12 16:59 · #21541 \[Doc\] add doc quality review workflow for docs/source changes](#pr-21541)
 
 ## 当前关注
+
+<a id="pr-21709"></a>
+
+### [#21709 · \[Performance\] Replace padding-mask fills with a single writeback for GLM5.3-Flash decode](https://github.com/vllm-project/vllm-ascend/pull/21709)
+
+新增发布说明，记录 GLM5.3-Flash decode 改为单次输出写回后的延迟优化。当前关注范围内仅包含这份 release note。
+
+**CI：** 未知 · **改动：** +345 / -6 · **最后提交：** 11-12 17:31
+
+<a id="pr-21707"></a>
+
+### [#21707 · \[Refactor\]\[RFork\] Drop Model Runner V1 EPLB bypass paths](https://github.com/vllm-project/vllm-ascend/pull/21707)
+
+更新 RFork 中文文档，说明旧 Model Runner V1 的静态、录制及动态 EPLB 配置已失效；同时删除 RFork 单测夹具中的旧 EPLB adaptor 和 routed-experts 模拟依赖。
+
+**CI：** 未知 · **改动：** +88 / -279 · **最后提交：** 11-12 17:28
+
+<a id="pr-21706"></a>
+
+### [#21706 · feat: add target LM head dynamic quantization for runner V2](https://github.com/vllm-project/vllm-ascend/pull/21706)
+
+补充 lm\_head\_quantization 配置文档，说明 Runner V2 下目标 LM head 动态量化的启用方式、A2/A3 与 A5 路径，以及权重格式、共享 draft head 和硬件限制。
+
+**CI：** 未知 · **改动：** +607 / -3 · **最后提交：** 11-11 09:19
+
+<a id="pr-21705"></a>
+
+### [#21705 · \[Feature\] DSpark expert-pool routing for the expert-offload path](https://github.com/vllm-project/vllm-ascend/pull/21705)
+
+把 expert-offload A5 测试加入精选 CI、设置 a5-4 runner 与预计耗时，并新增 CPU 单测夹具；配置文档补充 DSpark expert-pool 路由及图捕获参数示例。
+
+**CI：** 未知 · **改动：** +2852 / -6 · **最后提交：** 11-12 17:26
 
 <a id="pr-21701"></a>
 
@@ -69,9 +135,9 @@
 
 ### [#21700 · \[BugFix\] Surface actionable MemCache driver-version init errors](https://github.com/vllm-project/vllm-ascend/pull/21700)
 
-关注范围内新增发布说明，记录 MemCache 初始化错误的驱动版本与挂载提示改进；本次仅因 release notes 纳入。
+新增发布说明，记录 MemCache 初始化失败将显示检测到的驱动 Innerversion 和挂载提示，而不只返回 AssertionError。
 
-**CI：** 通过 · **改动：** +131 / -1 · **最后提交：** 11-12 16:14
+**CI：** 未知 · **改动：** +131 / -1 · **最后提交：** 11-12 17:16
 
 <a id="pr-21699"></a>
 
@@ -365,9 +431,9 @@
 
 ### [#21636 · \[Feature\]\[Stacked\]\[v0.32.0rc\]\[Qwen4Exp\] MRV2 preparation with union GBSA, CPU-sync and RecoverSSM](https://github.com/vllm-project/vllm-ascend/pull/21636)
 
-为 v0.32.0rc 补充 Qwen GDN RecoverSSM 开发设计文档，并加入 QSA union 算子验证与相关发布说明。
+新增 Qwen GDN RecoverSSM 设计与部署验证文档，说明缓存布局、PD 分离和硬件限制；同时补充 Qwen4 union 算子的成员集合、CPU 对照及批量 prefill 分发测试。
 
-**CI：** 失败（ci-gate） · **改动：** +7048 / -902 · **最后提交：** 11-12 14:06
+**CI：** 未知 · **改动：** +7076 / -902 · **最后提交：** 11-12 16:59
 
 <a id="pr-21635"></a>
 
@@ -400,3 +466,227 @@
 调整 PD 负载均衡示例代理的堆排序，在负载相同时使用轮转票号分配请求，避免固定实例持续占优。
 
 **CI：** 失败 · **改动：** +12 / -4 · **最后提交：** 11-11 21:59
+
+<a id="pr-21627"></a>
+
+### [#21627 · \[Performance\] Integrate union GBSA prefill for Qwen4Exp](https://github.com/vllm-project/vllm-ascend/pull/21627)
+
+新增 Qwen4 union 算子测试，覆盖稀疏选择集合、空行和 padding、大规模 CPU/NPU 对照，以及批量 prefill 与逐请求执行的一致性。
+
+**CI：** 未知 · **改动：** +527 / -22 · **最后提交：** 11-11 20:16 · **Draft**
+
+<a id="pr-21624"></a>
+
+### [#21624 · \[Feature\]\[Model\] Add Kimi fine-grained projection and shared-expert TP](https://github.com/vllm-project/vllm-ascend/pull/21624)
+
+配置文档新增 shared\_expert\_tensor\_parallel\_size 及其运行限制，并补充对应发布说明；投机解码单测的配置夹具增加 embedding\_tensor\_parallel\_size。
+
+**CI：** 未知 · **改动：** +1600 / -88 · **最后提交：** 11-12 16:36 · **Draft**
+
+<a id="pr-21623"></a>
+
+### [#21623 · \[Feature\]\[Engram\] Add local host VMM for shared A3 tables](https://github.com/vllm-project/vllm-ascend/pull/21623)
+
+为 A3 增加可选 Engram host VMM 原生库的 CMake 能力检测、构建和安装，并实现共享内存映射及清理接口；同步加入文档导航和发布说明。
+
+**CI：** 未知 · **改动：** +2466 / -99 · **最后提交：** 11-11 21:00
+
+<a id="pr-21622"></a>
+
+### [#21622 · \[Feature\] Support bilateral DCP in MooncakePushConnector](https://github.com/vllm-project/vllm-ascend/pull/21622)
+
+更新 PD 分离设计文档，说明 MooncakePushConnector 在 PCP=1 时支持两端独立 DCP 的 MLA KV 传输，以及页、条带、分块和模型类型限制。
+
+**CI：** 未知 · **改动：** +590 / -21 · **最后提交：** 11-11 20:58
+
+<a id="pr-21621"></a>
+
+### [#21621 · \[BugFix\]\[DSpark\]\[EPLB\] Fix V4.1 draft expert loading and registration](https://github.com/vllm-project/vllm-ascend/pull/21621)
+
+新增发布说明，记录启用 EPLB 时 DeepSeek V4.1 DSpark 的 MoE 注册和冗余专家权重映射修复。
+
+**CI：** 未知 · **改动：** +135 / -4 · **最后提交：** 11-11 22:22
+
+<a id="pr-21607"></a>
+
+### [#21607 · \[Test\]\[Upstream\]rerun failed test case](https://github.com/vllm-project/vllm-ascend/pull/21607)
+
+让 upstream E2E workflow 也由指定分支 PR 触发并关闭 Hugging Face 离线模式；测试运行器切换到新增的精选重跑用例配置。
+
+**CI：** 未知 · **改动：** +32 / -2 · **最后提交：** 11-12 11:31
+
+<a id="pr-21605"></a>
+
+### [#21605 · \[Performance\]\[A3\] Cache row weights for packed DCP LSE combine](https://github.com/vllm-project/vllm-ascend/pull/21605)
+
+新增 packed DCP LSE combine 的 NPU Graph 延迟回归基准，可记录软件及提交信息、对比基线、检查采样波动和性能退化；补充 A3 行权重缓存优化的发布说明。
+
+**CI：** 未知 · **改动：** +406 / -5 · **最后提交：** 11-11 20:04 · **Draft**
+
+<a id="pr-21604"></a>
+
+### [#21604 · \[BugFix\]\[Quantization\] Reject native FP8 checkpoints on non-950 devices](https://github.com/vllm-project/vllm-ascend/pull/21604)
+
+新增兼容性变更说明：非 Ascend 950 设备启动时拒绝原生分块 FP8 checkpoint，并给出 BF16 或重新量化的替代建议。
+
+**CI：** 未知 · **改动：** +212 / -88 · **最后提交：** 11-11 20:10
+
+<a id="pr-21603"></a>
+
+### [#21603 · \[Performance\]\[Kernel\] Adapt owner-prefix peer counting on A3](https://github.com/vllm-project/vllm-ascend/pull/21603)
+
+新增 owner-prefix 候选合并的 NPU Graph 回归基准，覆盖不同规模及分数分布，支持环境一致性、波动和退化检查；补充 A3 性能优化说明。
+
+**CI：** 未知 · **改动：** +429 / -1 · **最后提交：** 11-11 20:32 · **Draft**
+
+<a id="pr-21600"></a>
+
+### [#21600 · \[BugFix\]\[KVPool\] Report synchronous hybrid load failures by request](https://github.com/vllm-project/vllm-ascend/pull/21600)
+
+为 KVPool 单测依赖模拟补齐 model\_loader 与 mamba\_utils 模块，并新增同步 hybrid 加载失败处理的发布说明。
+
+**CI：** 未知 · **改动：** +99 / -14 · **最后提交：** 11-11 22:03 · **Draft**
+
+<a id="pr-21594"></a>
+
+### [#21594 · \[Feature\]\[MoE\] Support anchor-union activation routing for DSpark and DFlash speculative decoding](https://github.com/vllm-project/vllm-ascend/pull/21594)
+
+把 expert-offload A5 测试加入精选 CI，配置 a5-4 runner 和预计耗时，并增加 CPU 侧模型方法与 ACL/NPU 模拟夹具；补充 anchor-union 路由功能的发布说明。
+
+**CI：** 未知 · **改动：** +3880 / -4 · **最后提交：** 11-12 15:47 · **Draft**
+
+<a id="pr-21589"></a>
+
+### [#21589 · \[Performance\] Skip QSA CPU length sync for Ascend builder](https://github.com/vllm-project/vllm-ascend/pull/21589)
+
+补充发布说明，记录 QSA 推测解码消除逐步 CPU 序列长度同步开销的优化。
+
+**CI：** 未知 · **改动：** +23 / -6 · **最后提交：** 11-11 17:47 · **Draft**
+
+<a id="pr-21587"></a>
+
+### [#21587 · \[Feature\] Fuse GatingTopK with EPLB expert mapping](https://github.com/vllm-project/vllm-ascend/pull/21587)
+
+为 GatingTopK 原生算子增加可选 EPLB 路由表及形状校验，将专家映射融合到输出阶段；同时将对应 NPU 测试映射到 A3 runner。
+
+**CI：** 未知 · **改动：** +552 / -18 · **最后提交：** 11-12 17:32
+
+<a id="pr-21586"></a>
+
+### [#21586 · \[Performance\]\[Kernel\] Use rectangular tiles for D512 DCP output packing](https://github.com/vllm-project/vllm-ascend/pull/21586)
+
+新增 DCP output/LSE packing 的图回放性能对比脚本，并记录 A3 上 D512 BF16 打包优化。
+
+**CI：** 未知 · **改动：** +271 / -1 · **最后提交：** 11-11 17:36 · **Draft**
+
+<a id="pr-21584"></a>
+
+### [#21584 · \[Performance\]\[Kernel\] Share exact radix sorting across BF16 and FP32 candidate packing](https://github.com/vllm-project/vllm-ascend/pull/21584)
+
+新增 candidate packing 图回放回归基准，支持基线与候选结果比较；发布说明记录 A3 上共享精确 radix 排序的优化。
+
+**CI：** 未知 · **改动：** +267 / -66 · **最后提交：** 11-12 17:29 · **Draft**
+
+<a id="pr-21580"></a>
+
+### [#21580 · \[Feature\]\[Attention\] Support quant\_mode=5 pseudo-quant for MTP decode in C8 backend](https://github.com/vllm-project/vllm-ascend/pull/21580)
+
+补充发布说明，记录 C8 INT8 KV cache 在 MTP 解码下使用 quant\_mode=5 快速路径及不支持时的回退。
+
+**CI：** 未知 · **改动：** +518 / -24 · **最后提交：** 11-11 22:18
+
+<a id="pr-21575"></a>
+
+### [#21575 · \[BugFix\] Preserve Mamba checkpoints in consumer chunked prefill](https://github.com/vllm-project/vllm-ascend/pull/21575)
+
+补充发布说明，记录非 MTP KV consumer 分块预填充复用 Mamba/KDA 检查点的修复。
+
+**CI：** 未知 · **改动：** +395 / -8 · **最后提交：** 11-12 11:55 · **Draft**
+
+<a id="pr-21565"></a>
+
+### [#21565 · \[Test\]\[Sleep Mode\] Harden RLHF sleep/wake harness timeouts](https://github.com/vllm-project/vllm-ascend/pull/21565)
+
+加强 RLHF 通用测试服务生命周期管理：启动前等待显存和端口，独立进程组清理 EngineCore 子进程，避免超时后残留服务。
+
+**CI：** 未知 · **改动：** +40 / -9 · **最后提交：** 11-11 16:00 · **Draft**
+
+<a id="pr-21557"></a>
+
+### [#21557 · \[BugFix\]\[v0.32.0rc\] Sync SWA block IDs before KV Pool prefill saves](https://github.com/vllm-project/vllm-ascend/pull/21557)
+
+补充发布说明，记录 KV Pool 保存前刷新 SWA block ID、跳过已释放块及等待传输完成的修复。
+
+**CI：** 未知 · **改动：** +158 / -25 · **最后提交：** 11-11 17:17
+
+<a id="pr-21555"></a>
+
+### [#21555 · feat(ci): add /presmoke command for PR-level CANN image presmoke](https://github.com/vllm-project/vllm-ascend/pull/21555)
+
+增加 PR 级 /presmoke 命令，按 PR 提交重建 CANN 基础层和 nightly 镜像并运行测试；使用独立镜像后缀且禁止同步到 quay.io。
+
+**CI：** 未知 · **改动：** +208 / -60 · **最后提交：** 11-11 15:09
+
+<a id="pr-21554"></a>
+
+### [#21554 · \[BugFix\]\[Model\] Re-pack Kimi K3.1 Pro KDA conv weight after layerwise reload](https://github.com/vllm-project/vllm-ascend/pull/21554)
+
+补充发布说明，记录 Kimi K3.1 Pro KDA 在 level-2 唤醒并重载权重后重新打包卷积权重以避免 NaN 的修复。
+
+**CI：** 未知 · **改动：** +46 / -0 · **最后提交：** 11-11 15:19 · **Draft**
+
+<a id="pr-21553"></a>
+
+### [#21553 · \[Doc\]\[Recipe\] Add Ascend overlay for Qwen3-VL-235B-A22B-Instruct](https://github.com/vllm-project/vllm-ascend/pull/21553)
+
+新增 Qwen3-VL-235B-A22B-Instruct 的 Ascend recipe overlay，配置 A3 W8A8 QuaRot 部署参数和硬件信息。
+
+**CI：** 未知 · **改动：** +109 / -0 · **最后提交：** 11-12 00:25
+
+<a id="pr-21552"></a>
+
+### [#21552 · \[Doc\]\[Recipe\] Add Ascend overlay for Qwen3-Next-80B-A3B-Instruct](https://github.com/vllm-project/vllm-ascend/pull/21552)
+
+新增 Qwen3-Next-80B-A3B-Instruct 的 A3 BF16 recipe overlay，提供 TP4、全解码图和固定镜像版本等启动配置。
+
+**CI：** 未知 · **改动：** +31 / -0 · **最后提交：** 11-12 00:25
+
+<a id="pr-21549"></a>
+
+### [#21549 · \[Feature\] Add experimental Kimi KDA RecoverSSM support](https://github.com/vllm-project/vllm-ascend/pull/21549)
+
+补充实验性 Kimi KDA RecoverSSM 发布说明，注明 MRV2 推测解码、align 前缀缓存支持及 KV transfer 限制。
+
+**CI：** 未知 · **改动：** +1251 / -153 · **最后提交：** 11-12 15:45 · **Draft**
+
+<a id="pr-21548"></a>
+
+### [#21548 · \[BugFix\] Allocate Mooncake PD handshake ports dynamically](https://github.com/vllm-project/vllm-ascend/pull/21548)
+
+补充发布说明，记录 Mooncake PD 自动选择可用握手端口，避免固定端口占用导致启动失败。
+
+**CI：** 未知 · **改动：** +333 / -69 · **最后提交：** 11-11 15:40
+
+<a id="pr-21546"></a>
+
+### [#21546 · \[CI\] update cann=9.3.0\_20261110170400](https://github.com/vllm-project/vllm-ascend/pull/21546)
+
+将各型号 Ubuntu/openEuler Dockerfile 的 CANN 基础镜像从 9.2.1 更新为 SWR 上的 9.3.0\_20261110170400。
+
+**CI：** 未知 · **改动：** +8 / -8 · **最后提交：** 11-11 14:26
+
+<a id="pr-21543"></a>
+
+### [#21543 · \[Performance\]\[Ops\] Add SwiGLU graph fusion pass](https://github.com/vllm-project/vllm-ascend/pull/21543)
+
+补充发布说明，记录以 FX 融合将视觉 MLP 的 chunk/silu/mul 转为 npu\_swiglu 的优化。
+
+**CI：** 未知 · **改动：** +261 / -1 · **最后提交：** 11-11 14:41
+
+<a id="pr-21541"></a>
+
+### [#21541 · \[Doc\] add doc quality review workflow for docs/source changes](https://github.com/vllm-project/vllm-ascend/pull/21541)
+
+新增文档质量评测 workflow 及编排脚本，结合规则检查与 LLM 评测生成报告，并维护总结评论和 diff 行内评论；同仓 PR 与 fork PR 使用不同触发门控。
+
+**CI：** 未知 · **改动：** +1731 / -0 · **最后提交：** 11-12 16:26 · **Draft**
