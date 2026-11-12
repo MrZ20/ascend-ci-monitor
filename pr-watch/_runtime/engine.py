@@ -148,6 +148,8 @@ class WatchDB:
           base_ref TEXT NOT NULL, draft INTEGER NOT NULL,
           state TEXT NOT NULL DEFAULT 'open', first_discovered_at TEXT NOT NULL,
           meaningful_updated_at TEXT NOT NULL, last_seen_at TEXT NOT NULL,
+          activity_at TEXT, activity_kind TEXT, activity_evidence TEXT,
+          activity_probe_at TEXT, activity_probe_result TEXT,
           changed_files TEXT, files_sha TEXT, files_base TEXT, rules_version TEXT,
           matched INTEGER, matched_paths TEXT, additions INTEGER, deletions INTEGER,
           latest_commit_at TEXT, detail_sha TEXT, detail_base TEXT,
@@ -165,9 +167,19 @@ class WatchDB:
         PRAGMA user_version=1;
         """)
         columns = {r[1] for r in self.conn.execute("PRAGMA table_info(prs)")}
-        for name, kind in (("ci_verified_state", "TEXT"), ("ci_verified_gate", "INTEGER")):
+        for name, kind in (("ci_verified_state", "TEXT"), ("ci_verified_gate", "INTEGER"),
+                           ("activity_at", "TEXT"), ("activity_kind", "TEXT"), ("activity_evidence", "TEXT"),
+                           ("activity_probe_at", "TEXT"), ("activity_probe_result", "TEXT")):
             if name not in columns:
                 self.conn.execute(f"ALTER TABLE prs ADD COLUMN {name} {kind}")
+        # Recover only source-dated activity. First discovery, PR updated_at and
+        # meaningful_updated_at are observations, never proof of past activity.
+        for row in self.conn.execute("SELECT number,created_at,latest_commit_at FROM prs WHERE activity_at IS NULL").fetchall():
+            candidates = [(iso(row["created_at"]), "created", "GitHub PR created_at")]
+            if row["latest_commit_at"]:
+                candidates.append((iso(row["latest_commit_at"]), "commit", "Cached latest Commit timestamp"))
+            at, kind, evidence = max(candidates, key=lambda v: instant(v[0]))
+            self.conn.execute("UPDATE prs SET activity_at=?,activity_kind=?,activity_evidence=? WHERE number=?", (at, kind, evidence, row["number"]))
         self.conn.commit()
 
     def close(self):
@@ -186,6 +198,59 @@ class WatchDB:
     def _meta(self, key: str, value: Any):
         self.conn.execute("INSERT OR REPLACE INTO metadata VALUES (?,?)", (key, json.dumps(value)))
 
+    def _record_activity(self, number: int, activity_at: str, kind: str, evidence: str) -> bool:
+        if kind not in {"created", "commit", "head", "base", "draft", "ci"}:
+            raise ValueError("unsupported activity kind")
+        if not isinstance(evidence, str) or not evidence.strip():
+            raise ValueError("activity evidence required")
+        at = iso(activity_at)
+        row = self.row(number)
+        if row is None:
+            raise KeyError(number)
+        if row["activity_at"] and instant(row["activity_at"]) >= instant(at):
+            return False
+        self.conn.execute("UPDATE prs SET activity_at=?,activity_kind=?,activity_evidence=? WHERE number=?", (at, kind, evidence.strip(), number))
+        return True
+
+    def record_activity(self, number: int, activity_at: str, kind: str, evidence: str) -> bool:
+        """Record verified source activity, never comments or generic updated_at."""
+        changed = self._record_activity(number, activity_at, kind, evidence)
+        self.conn.commit()
+        return changed
+
+    def record_activity_probe(self, number: int, result: str, now=None):
+        if result not in {"active", "inactive", "unknown"}:
+            raise ValueError("unsupported activity probe result")
+        row = self.row(number)
+        if row is None:
+            raise KeyError(number)
+        if result == "active" and (not row["activity_at"] or instant(row["activity_at"]) < instant(now) - timedelta(days=30)):
+            raise ValueError("active probe requires recent activity evidence")
+        self.conn.execute("UPDATE prs SET activity_probe_at=?,activity_probe_result=? WHERE number=?", (iso(now), result, number))
+        self.conn.commit()
+
+    def scope_active(self, now=None) -> list[int]:
+        """Open PRs with verified activity in the rolling previous 30 days."""
+        cutoff = instant(now) - timedelta(days=30)
+        known_open = self._last_complete_open_ids()
+        return sorted(r["number"] for r in self.conn.execute("SELECT number,activity_at,matched FROM prs WHERE state='open'")
+                      if r["activity_at"] and instant(r["activity_at"]) >= cutoff
+                      and (known_open is None or r["number"] in known_open or r["matched"] == 1))
+
+    def _last_complete_open_ids(self) -> set[int] | None:
+        data = self.conn.execute("SELECT value FROM metadata WHERE key='complete_discovery'").fetchone()
+        if data:
+            snapshot = json.loads(data[0])
+            # A newer partial page can prove presence (but never absence).
+            return set(snapshot["open_ids"]) | {r[0] for r in self.conn.execute("SELECT number FROM prs WHERE last_seen_at>?", (snapshot["at"],))}
+        # Legacy cache migration: a completed discovery stamped every seen PR.
+        legacy = self.conn.execute("SELECT value FROM metadata WHERE key='discovery'").fetchone()
+        if legacy:
+            last = json.loads(legacy[0])
+            if last.get("complete") and last.get("at"):
+                return {r[0] for r in self.conn.execute("SELECT number FROM prs WHERE last_seen_at>=?", (last["at"],))}
+        return None
+
     def ingest_discovery(self, prs: list[dict], complete: bool, now=None) -> dict:
         now = iso(now)
         normalized = [normalize_meta(pr) for pr in prs]
@@ -198,20 +263,29 @@ class WatchDB:
             if old is None:
                 self.conn.execute("""INSERT INTO prs(number,title,url,created_at,updated_at,head_sha,base_ref,draft,first_discovered_at,meaningful_updated_at,last_seen_at)
                   VALUES(:number,:title,:url,:created_at,:updated_at,:head_sha,:base_ref,:draft,:now,:now,:now)""", dict(p, now=now))
+                self._record_activity(p["number"], p["created_at"], "created", "GitHub PR created_at")
             else:
                 change = old["head_sha"] != p["head_sha"] or old["base_ref"] != p["base_ref"] or old["draft"] != p["draft"] or old["state"] != "open"
                 self.conn.execute("""UPDATE prs SET title=:title,url=:url,created_at=:created_at,updated_at=:updated_at,
                     head_sha=:head_sha,base_ref=:base_ref,draft=:draft,state='open',last_seen_at=:now,
                     meaningful_updated_at=:meaningful,final_at=NULL WHERE number=:number""", dict(p, now=now, meaningful=now if change else old["meaningful_updated_at"]))
+                for key, kind in (("head_sha", "head"), ("base_ref", "base"), ("draft", "draft")):
+                    if old[key] != p[key]:
+                        self._record_activity(p["number"], now, kind, f"Observed {key} change from {old[key]} to {p[key]}")
+                if old["updated_at"] != p["updated_at"]:
+                    self.conn.execute("UPDATE prs SET activity_probe_at=NULL,activity_probe_result=NULL WHERE number=?", (p["number"],))
             row = self.row(p["number"])
             if row["changed_files"] is None or row["files_sha"] != p["head_sha"] or row["files_base"] != p["base_ref"]:
-                needs_files.append(p["number"])
+                if row["activity_at"] and instant(row["activity_at"]) >= instant(now) - timedelta(days=30):
+                    needs_files.append(p["number"])
             elif row["rules_version"] != self.rules.version:
                 paths = self.rules.matched_paths(row["changed_files"])
                 self.conn.execute("UPDATE prs SET matched=?,matched_paths=?,rules_version=?,meaningful_updated_at=? WHERE number=?", (bool(paths), json.dumps(paths), self.rules.version, now if paths and not row["matched"] else row["meaningful_updated_at"], p["number"]))
         existing = [r[0] for r in self.conn.execute("SELECT number FROM prs WHERE state='open'")]
         missing = sorted(set(existing) - set(numbers)) if complete else []
         self._meta("discovery", {"at": now, "complete": bool(complete), "count": len(numbers)})
+        if complete:
+            self._meta("complete_discovery", {"at": now, "open_ids": numbers})
         self.conn.commit()
         return {"needs_files": needs_files, "missing": missing}
 
@@ -254,6 +328,7 @@ class WatchDB:
                 self.conn.execute("UPDATE prs SET detail_error='matched PR detail incomplete' WHERE number=?", (number,))
             else:
                 self.conn.execute("UPDATE prs SET additions=?,deletions=?,latest_commit_at=?,detail_sha=?,detail_base=? WHERE number=?", (additions, deletions, latest, row["head_sha"], row["base_ref"], number))
+                self._record_activity(number, latest, "commit", f"GitHub latest Commit timestamp for {row['head_sha']}")
             if summary is not None:
                 self.conn.execute("INSERT OR REPLACE INTO summaries VALUES (?,?,?,?)", (number, row["head_sha"], row["base_ref"], summary))
             cached = self.cached_summary(number)
@@ -262,7 +337,7 @@ class WatchDB:
         self.conn.commit()
         return bool(paths)
 
-    def update_ci(self, number: int, state: str, ci_gate=False, now=None, complete=True, head_sha=None, base_ref=None):
+    def update_ci(self, number: int, state: str, ci_gate=False, now=None, complete=True, head_sha=None, base_ref=None, activity_at=None):
         row = self.row(number)
         if row is None:
             raise KeyError(number)
@@ -275,18 +350,24 @@ class WatchDB:
         if state not in CI_LABELS:
             raise ValueError("unsupported CI state")
         ci_gate = bool(ci_gate) and state == "failed"
+        actual_activity = iso(activity_at) if activity_at is not None else None
         # A read failure is a coverage event, not evidence of a meaningful CI change.
         changed = complete and (state != (row["ci_verified_state"] or "unknown") or ci_gate != bool(row["ci_verified_gate"]))
         self.conn.execute("""UPDATE prs SET ci_state=?,ci_gate=?,ci_checked_at=?,ci_sha=?,ci_base=?,
             meaningful_updated_at=?,ci_error=?,ci_verified_state=?,ci_verified_gate=? WHERE number=?""", (state, ci_gate, now, row["head_sha"], row["base_ref"], now if changed else row["meaningful_updated_at"], None if complete else "CI coverage incomplete", state if complete else row["ci_verified_state"], ci_gate if complete else row["ci_verified_gate"], number))
+        if complete and actual_activity is not None:
+            self._record_activity(number, actual_activity, "ci", f"GitHub Check/Status timestamp for {row['head_sha']}")
         self.conn.commit()
 
     def ci_due(self, now=None) -> list[int]:
         now = instant(now)
         local = now.astimezone(SHANGHAI)
         due = []
+        in_scope = set(self.scope_active(now))
         for record in self.conn.execute("SELECT * FROM prs WHERE state='open' AND matched=1"):
             row = dict(record)
+            if row["number"] not in in_scope:
+                continue
             stale = row["ci_sha"] != row["head_sha"] or row["ci_base"] != row["base_ref"]
             active = instant(row["meaningful_updated_at"]) >= now - timedelta(hours=72) or row["ci_state"] in ("pending", "unknown") or stale
             checked = instant(row["ci_checked_at"]) if row["ci_checked_at"] else None
@@ -311,14 +392,28 @@ class WatchDB:
 
     def render(self, now=None) -> tuple[str, str]:
         now = instant(now)
-        active = [dict(r) for r in self.conn.execute("SELECT * FROM prs WHERE state='open' AND matched=1 ORDER BY created_at DESC, number DESC")]
+        in_scope = set(self.scope_active(now))
+        active = [dict(r) for r in self.conn.execute("SELECT * FROM prs WHERE state='open' AND matched=1 ORDER BY created_at DESC, number DESC") if r["number"] in in_scope]
         archived = [dict(r) for r in self.conn.execute("SELECT * FROM prs WHERE state IN ('merged','closed') AND matched=1 ORDER BY final_at DESC, number DESC")]
-        pending = self.conn.execute("SELECT COUNT(*) FROM prs WHERE state='open' AND (matched IS NULL OR files_sha != head_sha OR files_base != base_ref OR detail_error IS NOT NULL)").fetchone()[0]
+        pending = sum(1 for r in self.conn.execute("""SELECT number FROM prs WHERE state='open' AND
+            (matched IS NULL OR files_sha != head_sha OR files_base != base_ref OR detail_error IS NOT NULL
+            OR (matched=1 AND (detail_sha IS NULL OR detail_sha != head_sha OR detail_base != base_ref
+                OR summary_sha IS NULL OR summary_sha != head_sha OR summary_base != base_ref)))""") if r["number"] in in_scope)
+        cutoff = now - timedelta(days=30)
+        known_open = self._last_complete_open_ids()
+        activity_unknown = sum(1 for r in self.conn.execute("SELECT number,created_at,updated_at,activity_probe_result FROM prs WHERE state='open'")
+                               if r["number"] not in in_scope and (known_open is None or r["number"] in known_open)
+                               and instant(r["created_at"]) < cutoff and instant(r["updated_at"]) >= cutoff and r["activity_probe_result"] != "inactive")
         discovery = self.conn.execute("SELECT value FROM metadata WHERE key='discovery'").fetchone()
         complete = json.loads(discovery[0]).get("complete", False) if discovery else False
-        lines = ["# PR 关注列表", "", f"最近刷新：{display_time(iso(now), True)}（上海时间）", f"当前关注的开放 PR：{len(active)}", ""]
+        lines = ["# PR 关注列表", "", f"最近刷新：{display_time(iso(now), True)}（上海时间）", f"当前关注的开放 PR：{len(active)}", "范围：最近 30 天有创建、提交、CI、Draft 或目标分支变化证据的开放 PR；普通评论不算活动。", "长期无元数据更新的旧 PR 未逐个追查仅 CI 重跑的活动，本页不代表这类活动已全覆盖。", ""]
+        if activity_unknown:
+            lines += [f"活动待确认：{activity_unknown} 个较早创建、近期 updated_at 变化的开放 PR 尚无最近 30 天有效活动证据，暂不纳入。", ""]
+        final_pending = sum(1 for r in active if known_open is not None and r["number"] not in known_open)
+        if final_pending:
+            lines += [f"最终状态待确认：{final_pending} 个已跟踪 PR 不在最近完整开放列表中，保留显示，尚未归档。", ""]
         if not complete or pending:
-            lines += [f"覆盖说明：{'开放 PR 列表尚未完整获取；' if not complete else ''}{f'{pending} 个开放 PR 的文件范围或详情待补齐。' if pending else '未据此归档缺失 PR。'}", ""]
+            lines += [f"覆盖说明：{'开放 PR 列表尚未完整获取；' if not complete else ''}{f'{pending} 个近 30 天范围内的 PR 文件范围或详情待补齐。' if pending else '未据此归档缺失 PR。'}", ""]
         lines += ["## 最近更新（72h）", ""]
         recent = sorted([r for r in active if instant(r["meaningful_updated_at"]) >= now - timedelta(hours=72)], key=lambda r: (r["meaningful_updated_at"], r["number"]), reverse=True)
         lines += [f"- [{display_time(r['meaningful_updated_at'])} · #{r['number']} {_text(r['title'])}](#pr-{r['number']})" for r in recent] or ["暂无近期更新。"]

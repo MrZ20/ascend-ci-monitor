@@ -31,6 +31,7 @@ class Fake:
         if '/status?' in rel:return {'statuses':[]}
         if rel.startswith('git/commits/'):return {'committer':{'date':'2026-11-11T03:00:00Z'},'parents':[]}
         if rel.startswith('actions/runs?'):return {'workflow_runs':[]}
+        if '/timeline?' in rel:return []
         raise AssertionError(url)
 
 class Tests(unittest.TestCase):
@@ -118,6 +119,45 @@ class Tests(unittest.TestCase):
         self.assertEqual(r['file_prs'],0);self.assertEqual(r['pending_files'],1)
         self.assertEqual(db.row(1)['files_sha'],'a');self.assertEqual(db.row(1)['detail_sha'],'a')
         self.assertFalse(any('/files?' in u for u in api.calls))
+    def old_pr(self,n=1):
+        p=pr(n);p['created_at']='2026-05-01T00:00:00Z';return p
+    def test_old_comment_only_not_in_scope(self):
+        d=self.setupdir();p=self.old_pr()
+        api=Fake([p],{'git/commits/':{'committer':{'date':'2026-05-01T00:00:00Z'},'parents':[]},
+                     'issues/1/timeline':[{'event':'commented','created_at':NOW}]})
+        r=prepare(d,api,round_id='one',now=NOW)
+        self.assertEqual(r['file_prs'],0);self.assertEqual(r['pending_files'],0);self.assertEqual(r['activity_unconfirmed'],0)
+        db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
+        self.assertEqual(db.row(1)['activity_probe_result'],'inactive');self.assertEqual(db.scope_active(NOW),[])
+    def test_old_recent_commit_qualifies(self):
+        d=self.setupdir();p=self.old_pr();r=prepare(d,Fake([p]),round_id='one',now=NOW)
+        self.assertEqual(r['file_prs'],1);self.assertEqual(r['activity_probes'],1);self.assertEqual(r['scope_active_open'],1)
+    def test_old_recent_draft_qualifies_not_comment(self):
+        d=self.setupdir();p=self.old_pr();api=Fake([p],{'git/commits/':{'committer':{'date':'2026-05-01T00:00:00Z'},'parents':[]},
+                  'issues/1/timeline':[{'event':'ready_for_review','created_at':'2026-11-11T00:00:00Z'}]})
+        r=prepare(d,api,round_id='one',now=NOW)
+        self.assertEqual(r['scope_active_open'],1);self.assertEqual(r['file_prs'],1)
+    def test_old_recent_ci_timestamp_qualifies(self):
+        d=self.setupdir();p=self.old_pr();api=Fake([p],{'git/commits/':{'committer':{'date':'2026-05-01T00:00:00Z'},'parents':[]},
+            'commits/a/check-runs':{'check_runs':[{'id':1,'name':'test','conclusion':'success','status':'completed','completed_at':'2026-11-11T00:00:00Z'}]}})
+        r=prepare(d,api,round_id='one',now=NOW)
+        self.assertEqual(r['scope_active_open'],1)
+    def test_activity_failure_unknown_not_inactive(self):
+        d=self.setupdir();p=self.old_pr();api=Fake([p],{'git/commits/':CoverageError('unavailable')})
+        r=prepare(d,api,round_id='one',now=NOW)
+        self.assertEqual(r['file_prs'],0);self.assertEqual(r['activity_unconfirmed'],1);self.assertTrue(r['gaps'])
+        db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
+        self.assertEqual(db.row(1)['activity_probe_result'],'unknown')
+    def test_activity_probe_cap20_and_cached(self):
+        d=self.setupdir();ps=[self.old_pr(n) for n in range(1,26)]
+        overrides={'git/commits/':{'committer':{'date':'2026-05-01T00:00:00Z'},'parents':[]}}
+        first=prepare(d,Fake(ps,overrides),round_id='one',now=NOW)
+        self.assertEqual(first['activity_probes'],20);self.assertEqual(first['activity_unconfirmed'],5)
+        second=prepare(d,Fake(ps,overrides),round_id='two',now=NOW)
+        self.assertEqual(second['activity_probes'],5);self.assertEqual(second['activity_unconfirmed'],0)
+    def test_ci_activity_uses_actual_timestamp_not_poll(self):
+        p=pr();api=Fake([p],{'commits/a/status':{'statuses':[{'context':'docs','state':'success','created_at':'2026-11-01T00:00:00Z','updated_at':'2026-11-02T00:00:00Z'}]}})
+        self.assertEqual(collect_ci(api,p)['activity_at'],'2026-11-02T00:00:00Z')
     def test_lock_nonblocking(self):
         d=self.setupdir()
         with round_lock(d):

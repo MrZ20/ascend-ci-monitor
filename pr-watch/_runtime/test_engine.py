@@ -192,6 +192,83 @@ class DBTests(unittest.TestCase):
         self.assertNotIn("<script>", active)
         self.assertIn("\\[b\\]", active)
 
+    def test_scope_does_not_use_discovery_or_updated(self):
+        self.db.ingest_discovery([pr(created="2025-01-01T00:00:00Z", updated=T)], True, T)
+        self.assertEqual(self.db.scope_active(T), [])
+        self.assertEqual(self.db.row(1)["activity_at"], "2025-01-01T00:00:00Z")
+        active, _ = self.db.render(T)
+        self.assertIn("活动待确认：1", active)
+        self.assertNotIn("文件范围或详情待补齐", active)
+        self.db.record_activity_probe(1, "inactive", T)
+        self.assertNotIn("活动待确认", self.db.render(T)[0])
+
+    def test_old_ci_first_observation_not_now_activity(self):
+        self.db.ingest_discovery([pr(created="2025-01-01T00:00:00Z")], True, T)
+        self.db.update_ci(1, "failed", True, T)
+        self.assertEqual(self.db.scope_active(T), [])
+        self.db.update_ci(1, "failed", True, T, activity_at="2025-01-02T00:00:00Z")
+        self.assertEqual(self.db.scope_active(T), [])
+        self.db.update_ci(1, "failed", True, T, activity_at="2026-11-11T00:00:00Z")
+        self.assertEqual(self.db.scope_active(T), [1])
+        self.assertEqual(self.db.row(1)["activity_kind"], "ci")
+
+    def test_commit_evidence_enters_scope_and_expires(self):
+        self.db.ingest_discovery([pr(created="2025-01-01T00:00:00Z")], True, T)
+        self.db.record_activity(1, "2026-11-11T00:00:00Z", "commit", "head SHA a commit timestamp")
+        self.assertEqual(self.db.scope_active(T), [1])
+        self.assertEqual(self.db.scope_active("2026-12-12T00:00:00Z"), [])
+        self.assertEqual(self.db.ci_due("2026-12-12T00:00:00Z"), [])
+
+    def test_observed_head_change_is_real_activity(self):
+        self.db.ingest_discovery([pr(created="2025-01-01T00:00:00Z")], True, T)
+        later = "2026-11-12T02:00:00Z"
+        self.db.ingest_discovery([pr(created="2025-01-01T00:00:00Z", head="b")], True, later)
+        self.assertEqual(self.db.scope_active(later), [1])
+        self.assertEqual(self.db.row(1)["activity_kind"], "head")
+
+    def test_activity_probe_reset_on_updated_only_no_scope_change(self):
+        self.db.ingest_discovery([pr(created="2025-01-01T00:00:00Z")], True, T)
+        self.db.record_activity_probe(1, "inactive", T)
+        later = "2026-11-12T02:00:00Z"
+        self.db.ingest_discovery([pr(created="2025-01-01T00:00:00Z", updated=later)], True, later)
+        self.assertIsNone(self.db.row(1)["activity_probe_result"])
+        self.assertEqual(self.db.scope_active(later), [])
+
+    def test_activity_migration_ignores_fake_meaningful_time(self):
+        self.db.ingest_discovery([pr(created="2025-01-01T00:00:00Z")], True, T)
+        self.db.conn.execute("UPDATE prs SET activity_at=NULL,latest_commit_at='2025-02-01T00:00:00Z',meaningful_updated_at=?", (T,))
+        self.db.conn.commit()
+        self.db.close()
+        self.db = WatchDB(Path(self.tmp.name) / "watch.db", RULES)
+        self.assertEqual(self.db.row(1)["activity_at"], "2025-02-01T00:00:00Z")
+        self.assertEqual(self.db.scope_active(T), [])
+
+    def test_missing_unmatched_not_selected_or_pending(self):
+        self.db.ingest_discovery([pr()], True, T)
+        later = "2026-11-12T02:00:00Z"
+        self.db.ingest_discovery([], True, later)
+        self.assertEqual(self.db.scope_active(later), [])
+        self.assertEqual(self.db.row(1)["state"], "open")
+        self.assertNotIn("文件范围或详情待补齐", self.db.render(later)[0])
+        self.db.ingest_discovery([], False, "2026-11-12T03:00:00Z")
+        self.assertEqual(self.db.scope_active(later), [])
+
+    def test_missing_matched_retained_pending_final_confirmation(self):
+        self.add()
+        later = "2026-11-12T02:00:00Z"
+        self.db.ingest_discovery([], True, later)
+        self.assertEqual(self.db.scope_active(later), [1])
+        self.assertIn("最终状态待确认：1", self.db.render(later)[0])
+        self.db.confirm_closed(1, "merged", later)
+        self.assertIn("已合入", self.db.render("2027-01-01T00:00:00Z")[1])
+
+    def test_newer_partial_proves_presence_not_absence(self):
+        self.db.ingest_discovery([], True, T)
+        later = "2026-11-12T02:00:00Z"
+        self.db.ingest_discovery([pr()], False, later)
+        self.assertEqual(self.db.scope_active(later), [1])
+        self.assertIn("1 个近 30 天范围内的 PR 文件范围或详情待补齐", self.db.render(later)[0])
+
 
 class CITests(unittest.TestCase):
     def test_states(self):

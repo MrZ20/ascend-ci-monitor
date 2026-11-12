@@ -5,7 +5,7 @@ No direct network, credentials, job logs, PR writes or report publishing here.
 from __future__ import annotations
 import argparse
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import fcntl
 import json
 import os
@@ -14,7 +14,7 @@ import re
 import time
 import uuid
 from urllib.parse import urlencode, urlsplit
-from engine import WatchDB, aggregate_ci, iso
+from engine import WatchDB, aggregate_ci, iso, instant
 
 REPO='vllm-project/vllm-ascend'
 ROOT=f'https://api.github.com/repos/{REPO}'
@@ -47,7 +47,8 @@ def safe_url(url):
     rel=u.path[len(prefix):]
     if not (re.fullmatch(r'pulls(?:/\d+(?:/files)?)?',rel) or
             re.fullmatch(r'commits/[A-Za-z0-9._-]+(?:/(?:check-runs|status))?',rel) or
-            re.fullmatch(r'git/commits/[A-Za-z0-9._-]+',rel) or rel=='actions/runs'):
+            re.fullmatch(r'git/commits/[A-Za-z0-9._-]+',rel) or
+            re.fullmatch(r'issues/\d+/timeline',rel) or rel=='actions/runs'):
         raise ValueError('source GET endpoint outside allowlist')
     return url
 
@@ -168,16 +169,18 @@ def collect_ci(api,pr):
             runs.extend(pages(api,'actions/runs?'+urlencode({'head_sha':sha}),'workflow_runs'))
     selected,identity_complete=latest_checks(checks,runs)
     result=aggregate_ci(selected,latest_statuses(statuses),complete=identity_complete)
-    return dict(result,complete=identity_complete,refs=refs,checks=len(selected),statuses=len(latest_statuses(statuses)))
+    times=[c.get(k) for c in selected for k in ('started_at','completed_at')]
+    times += [s.get(k) for s in latest_statuses(statuses) for k in ('created_at','updated_at')]
+    activity_at=max((iso(t) for t in times if t),default=None)
+    return dict(result,complete=identity_complete,refs=refs,checks=len(selected),statuses=len(latest_statuses(statuses)),activity_at=activity_at)
 
 
 def selection(db,needs,batch_limit,now=None):
-    # New PRs and changed cached PRs get at most half the slots while an old
-    # initialization backlog exists. This avoids delaying fresh PRs for days,
-    # but still guarantees progress through the old cache-missing population.
+    """No whole-history backlog: only PRs with proven activity in the last 30d."""
     if batch_limit<=0:return []
-    urgent=[];pending=[]
+    active=set(db.scope_active(now));urgent=[];pending=[]
     for n in needs:
+        if n not in active:continue
         row=db.row(n)
         fresh=now is not None and row['first_discovered_at']==iso(now)
         (urgent if row['changed_files'] is not None or fresh else pending).append(row)
@@ -190,11 +193,60 @@ def selection(db,needs,batch_limit,now=None):
     return [r['number'] for r in chosen]
 
 
+def activity_probe_candidates(db,now,limit=20):
+    """updated_at is only a cheap candidate hint, never activity evidence."""
+    cutoff=instant(now)-timedelta(days=30);active=set(db.scope_active(now));candidates=[]
+    known=db._last_complete_open_ids()
+    for rec in db.conn.execute("SELECT number FROM prs WHERE state='open'"):
+        row=db.row(rec[0])
+        if known is not None and row['number'] not in known:continue
+        if row['number'] in active or instant(row['created_at'])>=cutoff:continue
+        if instant(row['updated_at'])<cutoff:continue
+        result=row.get('activity_probe_result');at=row.get('activity_probe_at')
+        if result=='inactive':continue
+        if at and instant(now)-instant(at)<timedelta(hours=1):continue
+        candidates.append(row)
+    candidates.sort(key=lambda r:(bool(r.get('activity_probe_at')),r.get('activity_probe_at') or '',-instant(r['updated_at']).timestamp(),-r['number']))
+    return [r['number'] for r in candidates[:limit]]
+
+
+def probe_activity(db,api,pr,now):
+    """Prove activity from actual commit, check/status or Draft transition dates.
+
+    Complete old data proves inactivity only for the observed head and list version.
+    An API failure/ambiguous CI remains unknown, not silently outside the scope.
+    """
+    n=pr['number'];row=db.row(n);cutoff=instant(now)-timedelta(days=30)
+    commit=api.get(f'{ROOT}/git/commits/{row["head_sha"]}')
+    at=commit.get('committer',{}).get('date') or commit.get('author',{}).get('date')
+    if not at:raise CoverageError('latest commit timestamp unavailable for activity probe')
+    db.record_activity(n,at,'commit',f'Git commit {row["head_sha"]} committer/author date')
+    if instant(at)>=cutoff:
+        db.record_activity_probe(n,'active',now);return 'active'
+    ci=collect_ci(api,pr)
+    if ci['activity_at']:
+        db.record_activity(n,ci['activity_at'],'ci','Latest selected head/verified-merge check or commit-status event timestamp')
+        if instant(ci['activity_at'])>=cutoff:
+            db.record_activity_probe(n,'active',now);return 'active'
+    events=pages(api,f'issues/{n}/timeline')
+    drafts=[e.get('created_at') for e in events if e.get('event') in ('ready_for_review','converted_to_draft') and e.get('created_at')]
+    if drafts:
+        at=max(drafts,key=instant)
+        db.record_activity(n,at,'draft',f'Issue timeline ready_for_review/converted_to_draft event at {at}')
+        if instant(at)>=cutoff:
+            db.record_activity_probe(n,'active',now);return 'active'
+    if not ci['complete']:raise CoverageError('CI identity incomplete; absence of recent activity not established')
+    final=api.get(f'{ROOT}/pulls/{n}')
+    if final['head']['sha']!=row['head_sha'] or final['base']['ref']!=row['base_ref'] or bool(final.get('draft'))!=bool(row['draft']) or final.get('updated_at')!=row['updated_at']:
+        raise CoverageError('PR changed during activity probe; inactivity not established')
+    db.record_activity_probe(n,'inactive',now);return 'inactive'
+
+
 def prepare(directory,api,batch_limit=60,round_id=None,now=None):
     directory=Path(directory);now=iso(now);round_id=round_id or ('round-'+now.replace(':','').replace('-','')+'-'+uuid.uuid4().hex[:6])
     work=directory/'work'/round_id;work.mkdir(parents=True,exist_ok=True)
     db=WatchDB(directory/'pr_watch.db',directory/'exclude.yaml')
-    result={'round_id':round_id,'started_at':now,'discovery_complete':False,'gaps':[],'summary_requests':0,'file_prs':0,'ci_prs':0,'closed':0,'finished_at':None}
+    result={'round_id':round_id,'started_at':now,'discovery_complete':False,'gaps':[],'summary_requests':0,'file_prs':0,'ci_prs':0,'closed':0,'activity_probes':0,'finished_at':None}
     requests=[];prs=[];index={};start=time.monotonic()
     def gap(scope,err):
         result['gaps'].append({'scope':scope,'at':iso(),'description':str(err)[:400]})
@@ -218,7 +270,16 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
                     if pr.get('state')=='closed' and pr.get('closed_at'):
                         db.confirm_closed(n,'merged' if pr.get('merged_at') else 'closed',pr['closed_at'],pr.get('merged_at'));result['closed']+=1
                 except CoverageError as e:gap(f'PR {n} final state',e)
-            selected=selection(db,discovery['needs_files'],batch_limit,now)
+            for n in activity_probe_candidates(db,now,limit=20):
+                try:
+                    result['activity_probes']+=1
+                    probe_activity(db,api,index[n],now)
+                except (CoverageError,KeyError,ValueError) as e:
+                    db.record_activity_probe(n,'unknown',now);gap(f'PR {n} 30-day activity',e)
+            scope=set(db.scope_active(now))
+            # Probes can activate an old PR after ingest_discovery chose its queue.
+            needs=[n for n in scope if n in index and (db.row(n)['changed_files'] is None or db.row(n)['files_sha']!=db.row(n)['head_sha'] or db.row(n)['files_base']!=db.row(n)['base_ref'])]
+            selected=selection(db,needs,batch_limit,now)
             for n in selected:
                 try:
                     row=db.row(n);files=pages(api,f'pulls/{n}/files',cap=30)
@@ -231,6 +292,7 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
                     commit=api.get(f'{ROOT}/git/commits/{row["head_sha"]}')
                     latest=commit.get('committer',{}).get('date') or commit.get('author',{}).get('date')
                     if not latest:raise CoverageError('latest commit time missing')
+                    db.record_activity(n,latest,'commit',f'Git commit {row["head_sha"]} committer/author date')
                     db.update_detail(n,strip_files(files),pr['additions'],pr['deletions'],latest,head_sha=row['head_sha'],base_ref=row['base_ref'])
                     index[n]=pr
                     if not db.cached_summary(n):
@@ -241,7 +303,7 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
             # Cache-only rule changes can newly match a PR without needing files again.
             for r in list(db.conn.execute("SELECT number FROM prs WHERE state='open' AND matched=1 AND (detail_sha IS NULL OR detail_sha!=head_sha OR detail_base!=base_ref)")):
                 n=r[0]
-                if n in selected:continue
+                if n in selected or n not in scope:continue
                 row=db.row(n)
                 if row['files_sha']!=row['head_sha'] or row['files_base']!=row['base_ref']:
                     continue
@@ -250,10 +312,12 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
                     if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref']:raise CoverageError('head/base changed; deferred')
                     commit=api.get(f'{ROOT}/git/commits/{row["head_sha"]}')
                     latest=commit['committer']['date']
+                    db.record_activity(n,latest,'commit',f'Git commit {row["head_sha"]} committer date')
                     db.update_detail(n,row['changed_files'],pr['additions'],pr['deletions'],latest,head_sha=row['head_sha'],base_ref=row['base_ref'])
                     index[n]=pr
                 except (CoverageError,KeyError) as e:gap(f'PR {n} rematched detail',e)
             for n in db.ci_due(now):
+                if n not in scope:continue
                 try:
                     row=db.row(n);pr=index.get(n) or api.get(f'{ROOT}/pulls/{n}')
                     if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref']:raise CoverageError('head/base changed during CI collection')
@@ -263,7 +327,7 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
                         raise CoverageError('head/base/state changed during CI collection; deferred')
                     if final.get('merge_commit_sha')!=pr.get('merge_commit_sha'):
                         raise CoverageError('merge reference changed during CI collection; deferred')
-                    db.update_ci(n,ci['state'],ci['ci_gate'],now=now,complete=ci['complete'],head_sha=row['head_sha'],base_ref=row['base_ref'])
+                    db.update_ci(n,ci['state'],ci['ci_gate'],now=now,complete=ci['complete'],head_sha=row['head_sha'],base_ref=row['base_ref'],activity_at=ci['activity_at'])
                     result['ci_prs']+=1
                     if not ci['complete']:gap(f'PR {n} CI','Actions workflow identity unavailable; status unknown')
                 except CoverageError as e:
@@ -273,7 +337,7 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
             known={r['number'] for r in requests}
             for r in list(db.conn.execute("SELECT number FROM prs WHERE state='open' AND matched=1")):
                 n=r[0]
-                if n in known or db.cached_summary(n):continue
+                if n not in scope or n in known or db.cached_summary(n):continue
                 row=db.row(n)
                 if row['detail_sha']!=row['head_sha'] or row['detail_base']!=row['base_ref']:continue
                 try:
@@ -283,10 +347,17 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
                                      'relevant_files':[f for f in files if db.rules.matches([f])]})
                 except CoverageError as e:gap(f'PR {n} summary evidence',e)
         result['summary_requests']=len(requests)
-        result['matched_open']=db.conn.execute("SELECT COUNT(*) FROM prs WHERE state='open' AND matched=1").fetchone()[0]
-        result['pending_files']=db.conn.execute("SELECT COUNT(*) FROM prs WHERE state='open' AND (changed_files IS NULL OR files_sha!=head_sha OR files_base!=base_ref)").fetchone()[0]
+        scoped=[db.row(n) for n in db.scope_active(now)]
+        result['scope_active_open']=len(scoped)
+        result['matched_open']=sum(bool(r['matched']) for r in scoped)
+        result['pending_files']=sum(r['changed_files'] is None or r['files_sha']!=r['head_sha'] or r['files_base']!=r['base_ref'] for r in scoped)
+        cutoff=instant(now)-timedelta(days=30)
+        active_numbers={r['number'] for r in scoped}
+        known_open=db._last_complete_open_ids()
+        result['activity_unconfirmed']=sum((known_open is None or r[0] in known_open) and instant(db.row(r[0])['updated_at'])>=cutoff and r[0] not in active_numbers and db.row(r[0]).get('activity_probe_result')!='inactive' for r in db.conn.execute("SELECT number FROM prs WHERE state='open'"))
+        result['coverage_limit']='Scope is verified recent activity only; CI-only reruns on old PRs without recent metadata updates are not exhaustively searched.'
         result['metrics']=dict(api.metrics);result['metrics']['elapsed_seconds']=round(time.monotonic()-start,3)
-        result['finished_at']=iso();result['status']='partial' if result['gaps'] or result['pending_files'] else 'collected'
+        result['finished_at']=iso();result['status']='partial' if result['gaps'] or result['pending_files'] or result['activity_unconfirmed'] else 'collected'
         db._meta('prepared_round',round_id);db.conn.commit()
         atomic_json(work/'summary_requests.json',requests)
         atomic_json(work/'result.json',result)
