@@ -1,0 +1,348 @@
+"""Read-only incremental PR Watch collector. An Agent must service its file queue.
+
+No direct network, credentials, job logs, PR writes or report publishing here.
+"""
+from __future__ import annotations
+import argparse
+from contextlib import contextmanager
+from datetime import datetime, timezone
+import fcntl
+import json
+import os
+from pathlib import Path
+import re
+import time
+import uuid
+from urllib.parse import urlencode, urlsplit
+from engine import WatchDB, aggregate_ci, iso
+
+REPO='vllm-project/vllm-ascend'
+ROOT=f'https://api.github.com/repos/{REPO}'
+
+class CoverageError(RuntimeError): pass
+class BudgetError(CoverageError): pass
+
+
+def atomic_json(path, value):
+    path=Path(path);path.parent.mkdir(parents=True, exist_ok=True)
+    tmp=path.with_name(path.name+'.tmp-'+uuid.uuid4().hex)
+    tmp.write_text(json.dumps(value, ensure_ascii=False))
+    os.replace(tmp,path)
+
+@contextmanager
+def round_lock(directory):
+    directory=Path(directory);directory.mkdir(parents=True,exist_ok=True)
+    with open(directory/'watch.lock','a+') as lock:
+        try: fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError: raise CoverageError('another PR Watch phase is active')
+        try: yield
+        finally: fcntl.flock(lock,fcntl.LOCK_UN)
+
+
+def safe_url(url):
+    u=urlsplit(url)
+    prefix=f'/repos/{REPO}/'
+    if u.scheme!='https' or u.netloc!='api.github.com' or not u.path.startswith(prefix):
+        raise ValueError('source GET outside allowlist')
+    rel=u.path[len(prefix):]
+    if not (re.fullmatch(r'pulls(?:/\d+(?:/files)?)?',rel) or
+            re.fullmatch(r'commits/[A-Za-z0-9._-]+(?:/(?:check-runs|status))?',rel) or
+            re.fullmatch(r'git/commits/[A-Za-z0-9._-]+',rel) or rel=='actions/runs'):
+        raise ValueError('source GET endpoint outside allowlist')
+    return url
+
+
+def is_transient(response):
+    status=response.get('status')
+    error=str(response.get('error','')).lower()
+    prohibited=('bad credentials','expired credential','permission denied','resource not accessible','organization access','saml','security policy','human denial','invalid credential')
+    if any(w in error for w in prohibited): return False
+    return status in (429,500,502,503,504) or (status==403) or any(w in error for w in ('temporary','timeout','connection reset','network error'))
+
+class Bridge:
+    def __init__(self, queue, budget_seconds=720, request_timeout=90):
+        self.queue=Path(queue);self.queue.mkdir(parents=True,exist_ok=True)
+        self.deadline=time.monotonic()+budget_seconds
+        self.request_timeout=request_timeout
+        self.metrics={'rest_requests':0,'graphql_queries':0,'graphql_cost':None,'response_bytes':0,'file_list_bytes':0}
+        self.events=[]
+    def left(self): return self.deadline-time.monotonic()
+    def get(self,url):
+        safe_url(url)
+        for attempt in range(3):
+            if self.left()<=0: raise BudgetError('round time budget exhausted')
+            seq=self.metrics['rest_requests']+1
+            self.metrics['rest_requests']=seq
+            request=self.queue/f'request-{seq:06d}.json';response=self.queue/f'response-{seq:06d}.json'
+            atomic_json(request,{'id':seq,'method':'GET','url':url,'requested_at':iso()})
+            until=time.monotonic()+min(self.request_timeout,self.left())
+            while not response.exists():
+                if time.monotonic()>=until: raise BudgetError('connector response not received before request/round deadline')
+                time.sleep(.15)
+            data=json.loads(response.read_text())
+            if data.get('id',seq)!=seq: raise CoverageError('bridge response ID mismatch')
+            self.metrics['response_bytes']+=response.stat().st_size
+            if '/files?' in url:self.metrics['file_list_bytes']+=response.stat().st_size
+            # Raw API responses and unrelated patches are transient, never persistent caches.
+            response.unlink();request.unlink(missing_ok=True)
+            if data.get('ok'):
+                return data['data']
+            status=data.get('status');error=str(data.get('error','connector GET failed'))[:300]
+            self.events.append({'at':iso(),'url':url,'status':status,'attempt':attempt+1,'error':error})
+            if attempt==2 or not is_transient(data):raise CoverageError(f'GET failed: HTTP {status or "unknown"}; {error}')
+            delay=(30,90)[attempt]
+            delay=max(delay,float(data.get('retry_after_seconds') or 0))
+            reset=data.get('rate_reset_epoch')
+            if reset:delay=max(delay,float(reset)-time.time())
+            if delay>=self.left():raise BudgetError('retry delay exceeds remaining round budget')
+            time.sleep(delay)
+        raise AssertionError('unreachable')
+
+
+def pages(api,path,key=None,cap=200):
+    out=[]
+    for page in range(1,cap+1):
+        sep='&' if '?' in path else '?'
+        data=api.get(f'{ROOT}/{path}{sep}per_page=100&page={page}')
+        values=data[key] if key else data
+        if not isinstance(values,list):raise CoverageError('unexpected paginated response')
+        out.extend(values)
+        if len(values)<100:return out
+    raise CoverageError(f'pagination limit reached: {path.split("?")[0]}')
+
+
+def strip_files(files):
+    return [{k:f[k] for k in ('filename','previous_filename','status','additions','deletions','changes') if k in f} for f in files]
+
+
+def check_run_id(check):
+    m=re.search(r'/actions/runs/(\d+)',check.get('details_url') or '')
+    return int(m.group(1)) if m else None
+
+
+def latest_checks(checks,runs):
+    """Select latest logical check per workflow/app/name, retaining different workflows.
+
+    A run index supplies workflow identity. Missing identity on duplicates is explicitly
+    marked uncertain rather than treating old cancelled checks as current failure.
+    """
+    by_id={int(r['id']):r for r in runs}
+    groups={};ambiguous=False
+    for c in checks:
+        rid=check_run_id(c);run=by_id.get(rid)
+        app=(c.get('app') or {}).get('id') or (c.get('app') or {}).get('slug') or 'unknown'
+        workflow=run.get('workflow_id') or run.get('path') if run else None
+        if workflow is None:
+            # External integrations often have no Actions run; exact check name/app is
+            # their stable identity. For unresolved Actions URLs retain a distinct key.
+            workflow=('unresolved',rid) if rid else ('external',)
+            if rid:ambiguous=True
+        key=(str(workflow),str(app),c.get('name',''))
+        rank=((run or {}).get('run_number',0),(run or {}).get('run_attempt',0),
+              c.get('started_at') or c.get('completed_at') or '',int(c.get('id',0)))
+        if key not in groups or rank>groups[key][0]:groups[key]=(rank,c)
+    return [v[1] for v in groups.values()],not ambiguous
+
+
+def latest_statuses(statuses):
+    groups={}
+    for s in statuses:
+        key=s.get('context','');rank=(s.get('updated_at') or s.get('created_at') or '',int(s.get('id',0)))
+        if key not in groups or rank>groups[key][0]:groups[key]=(rank,s)
+    return [v[1] for v in groups.values()]
+
+
+def collect_ci(api,pr):
+    head=pr['head']['sha'];merge=pr.get('merge_commit_sha')
+    refs=[head]
+    if merge and merge!=head:
+        # Ensure synthetic merge actually contains this PR head before using it.
+        mc=api.get(f'{ROOT}/git/commits/{merge}')
+        if head in [p.get('sha') for p in mc.get('parents',[])]:refs.append(merge)
+    checks=[];statuses=[];runs=[]
+    for sha in refs:
+        checks.extend(pages(api,f'commits/{sha}/check-runs?filter=latest','check_runs'))
+        statuses.extend(pages(api,f'commits/{sha}/status','statuses'))
+        # Only request lightweight workflow-run metadata when there are Actions checks.
+        if any(check_run_id(c) for c in checks):
+            runs.extend(pages(api,'actions/runs?'+urlencode({'head_sha':sha}),'workflow_runs'))
+    selected,identity_complete=latest_checks(checks,runs)
+    result=aggregate_ci(selected,latest_statuses(statuses),complete=identity_complete)
+    return dict(result,complete=identity_complete,refs=refs,checks=len(selected),statuses=len(latest_statuses(statuses)))
+
+
+def selection(db,needs,batch_limit,now=None):
+    # New PRs and changed cached PRs get at most half the slots while an old
+    # initialization backlog exists. This avoids delaying fresh PRs for days,
+    # but still guarantees progress through the old cache-missing population.
+    if batch_limit<=0:return []
+    urgent=[];pending=[]
+    for n in needs:
+        row=db.row(n)
+        fresh=now is not None and row['first_discovered_at']==iso(now)
+        (urgent if row['changed_files'] is not None or fresh else pending).append(row)
+    urgent.sort(key=lambda r:(r['first_discovered_at'],r['number']),reverse=True)
+    pending.sort(key=lambda r:(r['first_discovered_at'],-r['number']))
+    chosen=urgent[:max(1,batch_limit//2)]
+    chosen+=pending[:batch_limit-len(chosen)]
+    chosen_ids={r['number'] for r in chosen}
+    chosen+=[r for r in urgent if r['number'] not in chosen_ids][:batch_limit-len(chosen)]
+    return [r['number'] for r in chosen]
+
+
+def prepare(directory,api,batch_limit=60,round_id=None,now=None):
+    directory=Path(directory);now=iso(now);round_id=round_id or ('round-'+now.replace(':','').replace('-','')+'-'+uuid.uuid4().hex[:6])
+    work=directory/'work'/round_id;work.mkdir(parents=True,exist_ok=True)
+    db=WatchDB(directory/'pr_watch.db',directory/'exclude.yaml')
+    result={'round_id':round_id,'started_at':now,'discovery_complete':False,'gaps':[],'summary_requests':0,'file_prs':0,'ci_prs':0,'closed':0,'finished_at':None}
+    requests=[];prs=[];index={};start=time.monotonic()
+    def gap(scope,err):
+        result['gaps'].append({'scope':scope,'at':iso(),'description':str(err)[:400]})
+    try:
+        try:
+            prs=pages(api,'pulls?state=open&sort=created&direction=desc')
+            if len({p['number'] for p in prs})!=len(prs):raise CoverageError('duplicate PR during discovery pagination')
+            result['discovery_complete']=True
+        except CoverageError as e:
+            # No partial-list archive decisions. Failed discovery does not erase cache.
+            gap('open PR discovery',e);prs=[]
+        discovery=db.ingest_discovery(prs,complete=result['discovery_complete'],now=now)
+        index={p['number']:p for p in prs}
+        result['open_prs']=len(prs) if result['discovery_complete'] else None
+        if result['discovery_complete']:
+            for n in discovery['missing']:
+                row=db.row(n)
+                if not row['matched']:continue
+                try:
+                    pr=api.get(f'{ROOT}/pulls/{n}')
+                    if pr.get('state')=='closed' and pr.get('closed_at'):
+                        db.confirm_closed(n,'merged' if pr.get('merged_at') else 'closed',pr['closed_at'],pr.get('merged_at'));result['closed']+=1
+                except CoverageError as e:gap(f'PR {n} final state',e)
+            selected=selection(db,discovery['needs_files'],batch_limit,now)
+            for n in selected:
+                try:
+                    row=db.row(n);files=pages(api,f'pulls/{n}/files',cap=30)
+                    result['file_prs']+=1
+                    pr=api.get(f'{ROOT}/pulls/{n}')
+                    if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref'] or pr.get('state')!='open':
+                        raise CoverageError('head/base/state changed during collection; deferred')
+                    if not db.rules.matches(files):
+                        db.update_detail(n,strip_files(files),head_sha=row['head_sha'],base_ref=row['base_ref']);continue
+                    commit=api.get(f'{ROOT}/git/commits/{row["head_sha"]}')
+                    latest=commit.get('committer',{}).get('date') or commit.get('author',{}).get('date')
+                    if not latest:raise CoverageError('latest commit time missing')
+                    db.update_detail(n,strip_files(files),pr['additions'],pr['deletions'],latest,head_sha=row['head_sha'],base_ref=row['base_ref'])
+                    index[n]=pr
+                    if not db.cached_summary(n):
+                        relevant=[f for f in files if db.rules.matches([f])]
+                        requests.append({'number':n,'head_sha':row['head_sha'],'base_ref':row['base_ref'],'title':pr['title'],'body':pr.get('body') or '',
+                                         'relevant_files':relevant})
+                except CoverageError as e:gap(f'PR {n} files/detail',e)
+            # Cache-only rule changes can newly match a PR without needing files again.
+            for r in list(db.conn.execute("SELECT number FROM prs WHERE state='open' AND matched=1 AND (detail_sha IS NULL OR detail_sha!=head_sha OR detail_base!=base_ref)")):
+                n=r[0]
+                if n in selected:continue
+                row=db.row(n)
+                if row['files_sha']!=row['head_sha'] or row['files_base']!=row['base_ref']:
+                    continue
+                try:
+                    pr=api.get(f'{ROOT}/pulls/{n}')
+                    if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref']:raise CoverageError('head/base changed; deferred')
+                    commit=api.get(f'{ROOT}/git/commits/{row["head_sha"]}')
+                    latest=commit['committer']['date']
+                    db.update_detail(n,row['changed_files'],pr['additions'],pr['deletions'],latest,head_sha=row['head_sha'],base_ref=row['base_ref'])
+                    index[n]=pr
+                except (CoverageError,KeyError) as e:gap(f'PR {n} rematched detail',e)
+            for n in db.ci_due(now):
+                try:
+                    row=db.row(n);pr=index.get(n) or api.get(f'{ROOT}/pulls/{n}')
+                    if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref']:raise CoverageError('head/base changed during CI collection')
+                    ci=collect_ci(api,pr)
+                    final=api.get(f'{ROOT}/pulls/{n}')
+                    if final['head']['sha']!=row['head_sha'] or final['base']['ref']!=row['base_ref'] or final.get('state')!='open':
+                        raise CoverageError('head/base/state changed during CI collection; deferred')
+                    if final.get('merge_commit_sha')!=pr.get('merge_commit_sha'):
+                        raise CoverageError('merge reference changed during CI collection; deferred')
+                    db.update_ci(n,ci['state'],ci['ci_gate'],now=now,complete=ci['complete'],head_sha=row['head_sha'],base_ref=row['base_ref'])
+                    result['ci_prs']+=1
+                    if not ci['complete']:gap(f'PR {n} CI','Actions workflow identity unavailable; status unknown')
+                except CoverageError as e:
+                    gap(f'PR {n} CI',e);db.update_ci(n,'unknown',now=now,complete=False)
+            # Retry missing summaries from earlier partial rounds; retrieve patches only
+            # for these exceptional cache-recovery cases, never for an unchanged cached summary.
+            known={r['number'] for r in requests}
+            for r in list(db.conn.execute("SELECT number FROM prs WHERE state='open' AND matched=1")):
+                n=r[0]
+                if n in known or db.cached_summary(n):continue
+                row=db.row(n)
+                if row['detail_sha']!=row['head_sha'] or row['detail_base']!=row['base_ref']:continue
+                try:
+                    files=pages(api,f'pulls/{n}/files',cap=30)
+                    pr=index.get(n) or api.get(f'{ROOT}/pulls/{n}')
+                    requests.append({'number':n,'head_sha':row['head_sha'],'base_ref':row['base_ref'],'title':pr['title'],'body':pr.get('body') or '',
+                                     'relevant_files':[f for f in files if db.rules.matches([f])]})
+                except CoverageError as e:gap(f'PR {n} summary evidence',e)
+        result['summary_requests']=len(requests)
+        result['matched_open']=db.conn.execute("SELECT COUNT(*) FROM prs WHERE state='open' AND matched=1").fetchone()[0]
+        result['pending_files']=db.conn.execute("SELECT COUNT(*) FROM prs WHERE state='open' AND (changed_files IS NULL OR files_sha!=head_sha OR files_base!=base_ref)").fetchone()[0]
+        result['metrics']=dict(api.metrics);result['metrics']['elapsed_seconds']=round(time.monotonic()-start,3)
+        result['finished_at']=iso();result['status']='partial' if result['gaps'] or result['pending_files'] else 'collected'
+        db._meta('prepared_round',round_id);db.conn.commit()
+        atomic_json(work/'summary_requests.json',requests)
+        atomic_json(work/'result.json',result)
+        atomic_json(directory/'latest-round.json',result)
+        return result
+    finally:db.close()
+
+
+def finish(directory,round_id,summaries,now=None):
+    directory=Path(directory);work=directory/'work'/round_id
+    result=json.loads((work/'result.json').read_text());requests=json.loads((work/'summary_requests.json').read_text())
+    db=WatchDB(directory/'pr_watch.db',directory/'exclude.yaml')
+    try:
+        prepared=db.conn.execute("SELECT value FROM metadata WHERE key='prepared_round'").fetchone()
+        if not prepared or json.loads(prepared[0])!=round_id:raise CoverageError('another round has replaced this prepared result')
+        applied=0
+        for req in requests:
+            n=req['number'];value=summaries.get(str(n),summaries.get(n))
+            if not value:continue
+            row=db.row(n)
+            if row['head_sha']!=req['head_sha'] or row['base_ref']!=req['base_ref']:raise CoverageError('summary request is stale')
+            if value.get('head_sha')!=req['head_sha']:raise CoverageError('summary SHA mismatch')
+            if value.get('base_ref',req['base_ref'])!=req['base_ref']:raise CoverageError('summary base mismatch')
+            db.update_detail(n,row['changed_files'],row['additions'],row['deletions'],row['latest_commit_at'],
+                             summary=value['summary'],summary_sha=req['head_sha'],head_sha=req['head_sha'],base_ref=req['base_ref'])
+            applied+=1
+        active,archive=db.render(now)
+        if result['gaps']:
+            # Brief concrete coverage note; no raw exceptions or sensitive API payloads.
+            active=active.replace('## 最近更新（72h）',f'本轮覆盖缺口：{len(result["gaps"])} 项采集未完成；受影响状态显示未知或等待补齐。\n\n## 最近更新（72h）',1)
+        (directory/'active.md').write_text(active);(directory/'archive.md').write_text(archive)
+        result['metrics']['ai_summaries_applied']=applied;result['rendered_at']=iso(now)
+        result['summaries_remaining']=len(requests)-applied
+        atomic_json(work/'result.json',result);atomic_json(directory/'latest-round.json',result)
+        # Do not retain patch bodies beyond review. Diagnostic counters/gaps survive.
+        (work/'summary_requests.json').unlink(missing_ok=True)
+        for p in (work/'bridge').glob('response-*.json'):p.unlink()
+        return result
+    finally:db.close()
+
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['prepare','finish']);p.add_argument('--directory',required=True)
+    p.add_argument('--batch-limit',type=int,default=60);p.add_argument('--budget-seconds',type=float,default=720)
+    p.add_argument('--round-id');p.add_argument('--summaries');p.add_argument('--now');a=p.parse_args();d=Path(a.directory)
+    try:
+        with round_lock(d):
+            if a.action=='prepare':
+                rid=a.round_id or 'round-'+iso().replace(':','').replace('-','')+'-'+uuid.uuid4().hex[:6]
+                api=Bridge(d/'work'/rid/'bridge',a.budget_seconds)
+                result=prepare(d,api,a.batch_limit,rid,a.now)
+            else:
+                if not a.round_id or not a.summaries:raise ValueError('finish needs --round-id and --summaries')
+                result=finish(d,a.round_id,json.loads(Path(a.summaries).read_text()),a.now)
+        print(json.dumps(result,ensure_ascii=False))
+    except Exception as e:
+        print(json.dumps({'status':'blocked','error':str(e)[:400]},ensure_ascii=False));raise SystemExit(2)
+
+if __name__=='__main__':main()
