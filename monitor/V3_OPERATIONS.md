@@ -24,3 +24,6 @@ After workspace replacement, restore monitor/ files from a verified remote commi
 The original exact exclusion list was lost. Do not invent or broaden it. Stream logs remain excluded by explicit instruction. A bounded recovery sample is not full equivalence to the lost policy; persist a coverage gap. The connector may omit Link/rate headers; use total_count and terminal pages and disclose limitations. Discover runs created in the past 24 hours; older-created reruns can be missed.
 
 On 2026-11-12 the first reconstructed capture (07:48:27 UTC) was interrupted by a second executor replacement before a result or done record existed. It did not publish a CI report or advance a complete baseline.
+
+### Atomic bridge response delivery
+Write each response to a temporary sibling file first, then atomically rename it to response-ID.json. Never create the final filename before JSON is fully written: the live worker can observe a partial file. Both collection and publication bridges require this. A bridge error is a failed local collection step, not proof of a GitHub failure.
