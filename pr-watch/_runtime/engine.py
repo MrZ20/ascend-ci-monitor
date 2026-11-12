@@ -52,7 +52,7 @@ def _text(value: Any) -> str:
 
 def glob_match(path: str, pattern: str) -> bool:
     """POSIX segment glob: ** matches zero or more complete path segments."""
-    parts, pats = tuple(path.split("/")), tuple(pattern.split("/"))
+    parts, pats = tuple(path.split("/")), tuple(pattern.lstrip("/").split("/"))
 
     @lru_cache(None)
     def match(i: int, j: int) -> bool:
@@ -70,9 +70,10 @@ class Rules:
         data = yaml.safe_load(raw)
         if not isinstance(data, dict) or not isinstance(data.get("keep"), list) or not isinstance(data.get("exclude"), list):
             raise ValueError("rules require keep and exclude lists")
-        if not all(isinstance(p, str) and p and not p.startswith("/") for p in data["keep"] + data["exclude"]):
+        if not all(isinstance(p, str) and p and ".." not in p.split("/") for p in data["keep"] + data["exclude"]):
             raise ValueError("invalid path pattern")
         self.keep, self.exclude = data["keep"], data["exclude"]
+        self.policy_version = int(data.get("version", 1))
         self.version = hashlib.sha256(raw).hexdigest()
 
     def included(self, path: str) -> bool:
@@ -89,6 +90,24 @@ class Rules:
 
     def matches(self, files: list[dict | str]) -> bool:
         return bool(self.matched_paths(files))
+
+    def engineering_path(self, path: str) -> bool:
+        """Unambiguous engineering paths; generic tools/common still need review."""
+        if not self.included(path):
+            return False
+        name = path.rsplit('/', 1)[-1]
+        if path.startswith('.github/'):
+            return True
+        if name.startswith(('Dockerfile', 'requirements')):
+            return True
+        if path.startswith(('docs/hooks/', 'docs/overrides/', 'docs/source/getting_started/',
+                            'docs/source/developer_guide/contribution/', 'docs/source/javascripts/',
+                            'docs/source/stylesheets/', 'tests/e2e/doctests/')):
+            return True
+        return path in {'mkdocs.yml', 'CMakeLists.txt', 'pyproject.toml', 'setup.py', 'setup.cfg',
+                        'docs/Makefile', 'docs/README.md', 'docs/source/developer_guide/index.md',
+                        'docs/source/community/slash-commands.md', 'csrc/build_aclnn.sh',
+                        'csrc/build.sh', 'csrc/scripts/build_cache.py'}
 
 
 def aggregate_ci(checks: list[dict], statuses: list[dict] | None = None, complete: bool = True) -> dict:
@@ -156,7 +175,8 @@ class WatchDB:
           summary TEXT, summary_sha TEXT, summary_base TEXT,
           ci_state TEXT NOT NULL DEFAULT 'unknown', ci_gate INTEGER NOT NULL DEFAULT 0,
           ci_verified_state TEXT, ci_verified_gate INTEGER,
-          ci_checked_at TEXT, ci_sha TEXT, ci_base TEXT,
+          ci_checked_at TEXT, ci_success_at TEXT, ci_attempted_at TEXT,
+          ci_deferred_at TEXT, ci_deferred_reason TEXT, ci_sha TEXT, ci_base TEXT,
           final_at TEXT, detail_error TEXT, ci_error TEXT
         );
         CREATE TABLE IF NOT EXISTS summaries (
@@ -167,11 +187,24 @@ class WatchDB:
         PRAGMA user_version=1;
         """)
         columns = {r[1] for r in self.conn.execute("PRAGMA table_info(prs)")}
+        migrate_ci_success = "ci_success_at" not in columns
+        migrate_ci_attempt = "ci_attempted_at" not in columns
         for name, kind in (("ci_verified_state", "TEXT"), ("ci_verified_gate", "INTEGER"),
+                           ("ci_success_at", "TEXT"), ("ci_attempted_at", "TEXT"),
+                           ("ci_deferred_at", "TEXT"), ("ci_deferred_reason", "TEXT"),
                            ("activity_at", "TEXT"), ("activity_kind", "TEXT"), ("activity_evidence", "TEXT"),
                            ("activity_probe_at", "TEXT"), ("activity_probe_result", "TEXT")):
             if name not in columns:
                 self.conn.execute(f"ALTER TABLE prs ADD COLUMN {name} {kind}")
+        if migrate_ci_attempt:
+            # Old budget-deferred rows could also carry ci_checked_at despite
+            # no request being made. Error rows cannot prove a real attempt.
+            self.conn.execute("UPDATE prs SET ci_attempted_at=ci_checked_at WHERE ci_error IS NULL")
+        if migrate_ci_success:
+            # The legacy field was also updated on failed fetches. Only a row
+            # without an error proves that timestamp was a complete refresh.
+            self.conn.execute("UPDATE prs SET ci_success_at=ci_checked_at WHERE ci_error IS NULL")
+            self.conn.execute("UPDATE prs SET ci_checked_at=NULL WHERE ci_error IS NOT NULL")
         # Recover only source-dated activity. First discovery, PR updated_at and
         # meaningful_updated_at are observations, never proof of past activity.
         for row in self.conn.execute("SELECT number,created_at,latest_commit_at FROM prs WHERE activity_at IS NULL").fetchall():
@@ -262,7 +295,7 @@ class WatchDB:
             old = self.row(p["number"])
             if old is None:
                 self.conn.execute("""INSERT INTO prs(number,title,url,created_at,updated_at,head_sha,base_ref,draft,first_discovered_at,meaningful_updated_at,last_seen_at)
-                  VALUES(:number,:title,:url,:created_at,:updated_at,:head_sha,:base_ref,:draft,:now,:now,:now)""", dict(p, now=now))
+                  VALUES(:number,:title,:url,:created_at,:updated_at,:head_sha,:base_ref,:draft,:now,:created_at,:now)""", dict(p, now=now))
                 self._record_activity(p["number"], p["created_at"], "created", "GitHub PR created_at")
             else:
                 change = old["head_sha"] != p["head_sha"] or old["base_ref"] != p["base_ref"] or old["draft"] != p["draft"] or old["state"] != "open"
@@ -280,14 +313,66 @@ class WatchDB:
                     needs_files.append(p["number"])
             elif row["rules_version"] != self.rules.version:
                 paths = self.rules.matched_paths(row["changed_files"])
-                self.conn.execute("UPDATE prs SET matched=?,matched_paths=?,rules_version=?,meaningful_updated_at=? WHERE number=?", (bool(paths), json.dumps(paths), self.rules.version, now if paths and not row["matched"] else row["meaningful_updated_at"], p["number"]))
+                self.conn.execute("UPDATE prs SET matched=?,matched_paths=?,rules_version=?,meaningful_updated_at=? WHERE number=?", (bool(paths), json.dumps(paths), self.rules.version, row["meaningful_updated_at"], p["number"]))
         existing = [r[0] for r in self.conn.execute("SELECT number FROM prs WHERE state='open'")]
         missing = sorted(set(existing) - set(numbers)) if complete else []
         self._meta("discovery", {"at": now, "complete": bool(complete), "count": len(numbers)})
         if complete:
             self._meta("complete_discovery", {"at": now, "open_ids": numbers})
         self.conn.commit()
+        if self.rules.policy_version >= 2:
+            self.rematch_cached()
         return {"needs_files": needs_files, "missing": missing}
+
+    def scope_decision(self, row: dict) -> dict | None:
+        if self.rules.policy_version < 2:
+            return {'decision': 'include', 'reason': 'v1 path policy'}
+        paths = self.rules.matched_paths(row.get('changed_files') or [])
+        if not paths:
+            return {'decision': 'exclude', 'reason': 'explicit path exclusion'}
+        if any(self.rules.engineering_path(p) for p in paths):
+            return {'decision': 'include', 'reason': 'explicit engineering file'}
+        saved = self.conn.execute("SELECT value FROM metadata WHERE key=?", (f"scope:{row['number']}",)).fetchone()
+        if not saved:
+            return None
+        value = json.loads(saved[0])
+        if (value.get('head_sha'), value.get('base_ref'), value.get('rules_version')) != (row['head_sha'], row['base_ref'], self.rules.version):
+            return None
+        return value
+
+    def apply_scope_decision(self, number: int, decision: str, reason: str, head_sha: str, base_ref: str):
+        row = self.row(number)
+        if row is None or (head_sha, base_ref) != (row['head_sha'], row['base_ref']):
+            raise ValueError('stale semantic decision')
+        if decision not in {'include', 'exclude', 'uncertain'} or not reason.strip():
+            raise ValueError('semantic decision and evidence reason required')
+        paths = self.rules.matched_paths(row['changed_files'] or [])
+        if decision != 'include' and any(self.rules.engineering_path(p) for p in paths):
+            raise ValueError('cannot semantically exclude explicit engineering files')
+        if decision == 'include' and not paths:
+            raise ValueError('cannot override explicit path exclusions')
+        self._meta(f'scope:{number}', dict(decision=decision, reason=reason, head_sha=head_sha,
+                    base_ref=base_ref, rules_version=self.rules.version))
+        self.conn.execute('UPDATE prs SET matched=? WHERE number=?', (decision == 'include', number))
+        self.conn.commit()
+
+    def rematch_cached(self):
+        """Reclassify cached complete file sets, including archived entries, without network."""
+        for record in self.conn.execute('SELECT number FROM prs WHERE changed_files IS NOT NULL').fetchall():
+            row = self.row(record[0])
+            if row['files_sha'] != row['head_sha'] or row['files_base'] != row['base_ref']:
+                continue
+            paths = self.rules.matched_paths(row['changed_files'])
+            decision = self.scope_decision(row)
+            matched = bool(paths) and bool(decision and decision['decision'] == 'include')
+            self.conn.execute('UPDATE prs SET matched=?,matched_paths=?,rules_version=? WHERE number=?',
+                              (matched, json.dumps(paths), self.rules.version, row['number']))
+        self.conn.commit()
+
+    def semantic_pending(self, now=None):
+        active = set(self.scope_active(now))
+        return [self.row(r[0]) for r in self.conn.execute("SELECT number FROM prs WHERE state='open' AND changed_files IS NOT NULL AND files_sha=head_sha AND files_base=base_ref")
+                if r[0] in active and self.scope_decision(self.row(r[0])) is None]
 
     def cached_summary(self, number: int, head_sha: str | None = None, base_ref: str | None = None) -> str | None:
         row = self.row(number)
@@ -335,6 +420,8 @@ class WatchDB:
             if cached:
                 self.conn.execute("UPDATE prs SET summary=?,summary_sha=?,summary_base=? WHERE number=?", (cached, row["head_sha"], row["base_ref"], number))
         self.conn.commit()
+        if self.rules.policy_version >= 2:
+            self.rematch_cached()
         return bool(paths)
 
     def update_ci(self, number: int, state: str, ci_gate=False, now=None, complete=True, head_sha=None, base_ref=None, activity_at=None):
@@ -353,10 +440,27 @@ class WatchDB:
         actual_activity = iso(activity_at) if activity_at is not None else None
         # A read failure is a coverage event, not evidence of a meaningful CI change.
         changed = complete and (state != (row["ci_verified_state"] or "unknown") or ci_gate != bool(row["ci_verified_gate"]))
-        self.conn.execute("""UPDATE prs SET ci_state=?,ci_gate=?,ci_checked_at=?,ci_sha=?,ci_base=?,
-            meaningful_updated_at=?,ci_error=?,ci_verified_state=?,ci_verified_gate=? WHERE number=?""", (state, ci_gate, now, row["head_sha"], row["base_ref"], now if changed else row["meaningful_updated_at"], None if complete else "CI coverage incomplete", state if complete else row["ci_verified_state"], ci_gate if complete else row["ci_verified_gate"], number))
+        self.conn.execute("""UPDATE prs SET ci_state=?,ci_gate=?,ci_checked_at=?,ci_success_at=?,ci_attempted_at=?,
+            ci_deferred_at=NULL,ci_deferred_reason=NULL,ci_sha=?,ci_base=?,
+            meaningful_updated_at=?,ci_error=?,ci_verified_state=?,ci_verified_gate=? WHERE number=?""", (
+                state, ci_gate, now if complete else row["ci_success_at"], now if complete else row["ci_success_at"], now,
+                row["head_sha"], row["base_ref"], now if changed else row["meaningful_updated_at"],
+                None if complete else "CI coverage incomplete", state if complete else row["ci_verified_state"],
+                ci_gate if complete else row["ci_verified_gate"], number))
         if complete and actual_activity is not None:
             self._record_activity(number, actual_activity, "ci", f"GitHub Check/Status timestamp for {row['head_sha']}")
+        self.conn.commit()
+
+    def mark_ci_deferred(self, numbers: list[int], now=None, reason="budget"):
+        """Record unattempted work without changing CI state or refresh clocks."""
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError("deferred reason required")
+        at = iso(now)
+        numbers = list(dict.fromkeys(numbers))
+        if any(self.row(number) is None for number in numbers):
+            raise KeyError("unknown deferred PR")
+        for number in numbers:
+            self.conn.execute("UPDATE prs SET ci_deferred_at=?,ci_deferred_reason=? WHERE number=? AND state='open'", (at, reason.strip(), number))
         self.conn.commit()
 
     def ci_due(self, now=None) -> list[int]:
@@ -370,15 +474,22 @@ class WatchDB:
                 continue
             stale = row["ci_sha"] != row["head_sha"] or row["ci_base"] != row["base_ref"]
             active = instant(row["meaningful_updated_at"]) >= now - timedelta(hours=72) or row["ci_state"] in ("pending", "unknown") or stale
-            checked = instant(row["ci_checked_at"]) if row["ci_checked_at"] else None
+            checked = instant(row["ci_success_at"]) if row["ci_success_at"] else None
+            needs_refresh = False
             if active:
-                if stale or not checked or now - checked >= timedelta(hours=1):
-                    due.append(row["number"])
+                needs_refresh = stale or not checked or bool(row["ci_error"]) or now.replace(minute=0,second=0,microsecond=0) > checked.replace(minute=0,second=0,microsecond=0)
             else:
                 checkpoint = local.replace(hour=9, minute=0, second=0, microsecond=0)
-                if local >= checkpoint and (not checked or checked < checkpoint.astimezone(UTC)):
-                    due.append(row["number"])
-        return sorted(due)
+                needs_refresh = bool(row["ci_error"]) or local >= checkpoint and (not checked or checked < checkpoint.astimezone(UTC))
+            if needs_refresh:
+                due.append(row)
+        oldest = datetime.min.replace(tzinfo=UTC)
+        # Eligibility uses successful refreshes. Scheduling rotates by actual
+        # attempts, so a permanently failing endpoint cannot monopolize the queue.
+        due.sort(key=lambda r: (instant(r["ci_attempted_at"]) if r["ci_attempted_at"] else oldest,
+                                instant(r["ci_success_at"]) if r["ci_success_at"] else oldest,
+                                r["number"]))
+        return [r["number"] for r in due]
 
     def confirm_closed(self, number: int, state: str, closed_at: str, merged_at: str | None = None):
         if state not in ("merged", "closed"):
@@ -392,6 +503,8 @@ class WatchDB:
 
     def render(self, now=None) -> tuple[str, str]:
         now = instant(now)
+        if self.rules.policy_version >= 2:
+            self.rematch_cached()
         in_scope = set(self.scope_active(now))
         active = [dict(r) for r in self.conn.execute("SELECT * FROM prs WHERE state='open' AND matched=1 ORDER BY created_at DESC, number DESC") if r["number"] in in_scope]
         archived = [dict(r) for r in self.conn.execute("SELECT * FROM prs WHERE state IN ('merged','closed') AND matched=1 ORDER BY final_at DESC, number DESC")]
@@ -412,17 +525,26 @@ class WatchDB:
         final_pending = sum(1 for r in active if known_open is not None and r["number"] not in known_open)
         if final_pending:
             lines += [f"最终状态待确认：{final_pending} 个已跟踪 PR 不在最近完整开放列表中，保留显示，尚未归档。", ""]
+        ci_pending = set(self.ci_due(now)) | {r["number"] for r in active if r["ci_deferred_at"]}
+        if ci_pending:
+            lines += [f"CI 待刷新：{len(ci_pending)} 个 PR 尚未取得本轮所需的完整检查结果；上次状态不代表当前结果。", ""]
         if not complete or pending:
             lines += [f"覆盖说明：{'开放 PR 列表尚未完整获取；' if not complete else ''}{f'{pending} 个近 30 天范围内的 PR 文件范围或详情待补齐。' if pending else '未据此归档缺失 PR。'}", ""]
+        semantic_pending = self.semantic_pending(now) if self.rules.policy_version >= 2 else []
+        if semantic_pending:
+            lines += [f"范围待判断：{len(semantic_pending)} 个 PR 的工具、通用目录或新路径尚待轻量语义核对，暂不纳入关注列表。", ""]
         lines += ["## 最近更新（72h）", ""]
-        recent = sorted([r for r in active if instant(r["meaningful_updated_at"]) >= now - timedelta(hours=72)], key=lambda r: (r["meaningful_updated_at"], r["number"]), reverse=True)
-        lines += [f"- [{display_time(r['meaningful_updated_at'])} · #{r['number']} {_text(r['title'])}](#pr-{r['number']})" for r in recent] or ["暂无近期更新。"]
+        recent = sorted([r for r in active if instant(r["activity_at"] or r["created_at"]) >= now - timedelta(hours=72)], key=lambda r: (r["activity_at"] or r["created_at"], r["number"]), reverse=True)
+        lines += [f"- [{display_time(r['activity_at'] or r['created_at'])} · #{r['number']} {_text(r['title'])}](#pr-{r['number']})" for r in recent] or ["暂无近期更新。"]
         lines += ["", "## 当前关注", ""]
         for row in active:
-            lines += self._section(row)
+            lines += self._section(row, ci_pending=row["number"] in ci_pending)
         if not active:
             lines += ["当前没有已确认符合范围的开放 PR。", ""]
         archive = ["# PR 归档", "", f"最近刷新：{display_time(iso(now), True)}（上海时间）", "", "仅记录开始跟踪后确认合入或关闭的 PR，不追溯全部历史。", ""]
+        removed = self.conn.execute("SELECT value FROM metadata WHERE key='archive_pruned'").fetchone()
+        if removed:
+            archive += ['<!-- pr-watch-pruned: '+json.dumps(json.loads(removed[0]))+' -->', '']
         for row in archived:
             archive += self._section(row, archived=True)
         if not archived:
@@ -430,13 +552,18 @@ class WatchDB:
         return "\n".join(lines), "\n".join(archive)
 
     @staticmethod
-    def _section(row: dict, archived=False) -> list[str]:
+    def _section(row: dict, archived=False, ci_pending=False) -> list[str]:
         fresh_summary = row["summary_sha"] == row["head_sha"] and row["summary_base"] == row["base_ref"]
         fresh_detail = row["detail_sha"] == row["head_sha"] and row["detail_base"] == row["base_ref"]
         fresh_ci = row["ci_sha"] == row["head_sha"] and row["ci_base"] == row["base_ref"]
         ci = CI_LABELS[row["ci_state"]] if fresh_ci else "未知"
         if fresh_ci and row["ci_state"] == "failed" and row["ci_gate"]:
             ci += "（ci-gate）"
+        if ci_pending and not archived:
+            previous = CI_LABELS.get(row["ci_verified_state"], "未知")
+            if row["ci_verified_state"] == "failed" and row["ci_verified_gate"]:
+                previous += "（ci-gate）"
+            ci = f"未知（待刷新；上次完整检查：{display_time(row['ci_success_at'])} · {previous}）" if row["ci_success_at"] else "未知（待刷新；尚无完整检查记录）"
         changes = f"+{row['additions']} / -{row['deletions']}" if fresh_detail else "待更新"
         summary = row["summary"] if fresh_summary and row["summary"] else "相关文件已纳入关注，当前提交的变更摘要待补齐。"
         status = f"**CI：** {ci} · **改动：** {changes} · **最后提交：** {display_time(row['latest_commit_at']) if fresh_detail else '待更新'}"

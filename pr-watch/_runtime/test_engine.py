@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import sqlite3
 
 from engine import WatchDB, Rules, aggregate_ci, glob_match, instant
 
@@ -42,7 +43,9 @@ class MatchTests(unittest.TestCase):
 class DBTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.db = WatchDB(Path(self.tmp.name) / "watch.db", RULES)
+        fixture=Path(self.tmp.name)/"legacy.yaml"
+        fixture.write_text('# PR Watch V1: explicit keep rules take precedence over exclusions.\n# Unmatched paths are included; do not expand exclusions automatically.\nversion: 1\nkeep:\n  - .github/**\n  - tests/e2e/common/**\n  - tests/e2e/doctests/**\n  - tests/e2e/nightly/**/scripts/**\n  - tests/ut/_tools/**\n  - tests/ut/tools/**\nexclude:\n  - vllm_ascend/**\n  - docs/source/tutorials/models/**\n  - docs/source/user_guide/feature_guide/**\n  - docs/source/user_guide/support_matrix/**\n  - tests/SIT/cases/models/**\n  - tests/SIT/cases/features/**\n  - tests/e2e/pull_request/**\n  - tests/e2e/nightly/**\n  - tests/ut/**/test_*.py\n')
+        self.db = WatchDB(Path(self.tmp.name) / "watch.db", fixture)
 
     def tearDown(self):
         self.db.close()
@@ -59,7 +62,7 @@ class DBTests(unittest.TestCase):
         result = self.db.ingest_discovery([pr(updated="2026-11-12T03:00:00Z")], True, "2026-11-12T03:00:00Z")
         self.assertEqual(result["needs_files"], [])
         self.assertEqual(self.db.cached_summary(1), "更新工具。")
-        self.assertEqual(self.db.row(1)["meaningful_updated_at"], T)
+        self.assertEqual(self.db.row(1)["meaningful_updated_at"], pr()["createdAt"])
 
     def test_head_and_base_changes(self):
         self.add()
@@ -98,7 +101,7 @@ class DBTests(unittest.TestCase):
     def test_ci_changes_bump_only_real_observation(self):
         self.add()
         self.db.update_ci(1, "passed", now=T)
-        self.db.update_ci(1, "passed", now="2026-11-12T02:00:00Z")
+        self.db.update_ci(1, "passed", now="2026-11-12T02:00:00Z", activity_at="2026-11-12T02:00:00Z")
         self.assertEqual(self.db.row(1)["meaningful_updated_at"], T)
         self.db.update_ci(1, "failed", True, "2026-11-12T03:00:00Z")
         self.assertEqual(self.db.row(1)["meaningful_updated_at"], "2026-11-12T03:00:00Z")
@@ -167,7 +170,7 @@ class DBTests(unittest.TestCase):
         self.db.ingest_discovery(prs, True, T)
         for n in (1, 2):
             self.db.update_detail(n, ["tools/a.py"], 1, 0, T, f"摘要{n}", "a", T)
-        self.db.update_ci(1, "passed", now="2026-11-12T02:00:00Z")
+        self.db.update_ci(1, "passed", now="2026-11-12T02:00:00Z", activity_at="2026-11-12T02:00:00Z")
         active, _ = self.db.render("2026-11-12T02:00:00Z")
         self.assertLess(active.index("· #1"), active.index("· #2"))
         self.assertLess(active.index('<a id="pr-2">'), active.index('<a id="pr-1">'))
@@ -239,7 +242,9 @@ class DBTests(unittest.TestCase):
         self.db.conn.execute("UPDATE prs SET activity_at=NULL,latest_commit_at='2025-02-01T00:00:00Z',meaningful_updated_at=?", (T,))
         self.db.conn.commit()
         self.db.close()
-        self.db = WatchDB(Path(self.tmp.name) / "watch.db", RULES)
+        fixture=Path(self.tmp.name)/"legacy.yaml"
+        fixture.write_text('# PR Watch V1: explicit keep rules take precedence over exclusions.\n# Unmatched paths are included; do not expand exclusions automatically.\nversion: 1\nkeep:\n  - .github/**\n  - tests/e2e/common/**\n  - tests/e2e/doctests/**\n  - tests/e2e/nightly/**/scripts/**\n  - tests/ut/_tools/**\n  - tests/ut/tools/**\nexclude:\n  - vllm_ascend/**\n  - docs/source/tutorials/models/**\n  - docs/source/user_guide/feature_guide/**\n  - docs/source/user_guide/support_matrix/**\n  - tests/SIT/cases/models/**\n  - tests/SIT/cases/features/**\n  - tests/e2e/pull_request/**\n  - tests/e2e/nightly/**\n  - tests/ut/**/test_*.py\n')
+        self.db = WatchDB(Path(self.tmp.name) / "watch.db", fixture)
         self.assertEqual(self.db.row(1)["activity_at"], "2025-02-01T00:00:00Z")
         self.assertEqual(self.db.scope_active(T), [])
 
@@ -269,6 +274,68 @@ class DBTests(unittest.TestCase):
         self.assertEqual(self.db.scope_active(later), [1])
         self.assertIn("1 个近 30 天范围内的 PR 文件范围或详情待补齐", self.db.render(later)[0])
 
+    def test_failed_refresh_does_not_reset_success_clock(self):
+        self.add()
+        self.db.update_ci(1, "passed", now=T)
+        failed_at = "2026-11-12T01:30:00Z"
+        self.db.update_ci(1, "unknown", now=failed_at, complete=False)
+        row = self.db.row(1)
+        self.assertEqual(row["ci_success_at"], T)
+        self.assertEqual(row["ci_checked_at"], T)
+        self.assertEqual(row["ci_attempted_at"], failed_at)
+        self.assertEqual(self.db.ci_due("2026-11-12T01:31:00Z"), [1])
+        self.db.update_ci(1, "passed", now="2026-11-12T02:00:00Z", activity_at="2026-11-12T02:00:00Z")
+        self.assertEqual(self.db.row(1)["ci_success_at"], "2026-11-12T02:00:00Z")
+
+    def test_due_fair_rotation_uses_actual_attempt_not_number(self):
+        self.db.ingest_discovery([pr(1), pr(2), pr(3)], True, T)
+        for number in (1, 2, 3):
+            self.db.update_detail(number, ["tools/a.py"], 1, 0, T, "改动。", "a", T)
+        self.assertEqual(self.db.ci_due(T), [1, 2, 3])
+        self.db.update_ci(1, "unknown", complete=False, now=T)
+        self.assertEqual(self.db.ci_due(T), [2, 3, 1])
+        self.db.update_ci(2, "passed", now="2026-11-12T01:10:00Z")
+        self.db.update_ci(3, "unknown", complete=False, now="2026-11-12T01:20:00Z")
+        self.assertEqual(self.db.ci_due("2026-11-12T02:30:00Z"), [1, 2, 3])
+        self.db.update_ci(1, "unknown", complete=False, now="2026-11-12T02:30:00Z")
+        self.assertEqual(self.db.ci_due("2026-11-12T02:31:00Z"), [2, 3, 1])
+
+    def test_unattempted_budget_deferral_preserves_clocks_and_order(self):
+        self.add()
+        self.db.update_ci(1, "passed", now=T)
+        before = self.db.row(1)
+        later = "2026-11-12T02:00:00Z"
+        self.db.mark_ci_deferred([1], later)
+        after = self.db.row(1)
+        for key in ("ci_state", "ci_checked_at", "ci_success_at", "ci_attempted_at", "meaningful_updated_at"):
+            self.assertEqual(after[key], before[key])
+        report = self.db.render(later)[0]
+        self.assertIn("CI 待刷新：1", report)
+        self.assertIn("**CI：** 未知（待刷新", report)
+        self.assertIn("上次完整检查：11-12 09:00 · 通过", report)
+        self.db.update_ci(1, "passed", now=later)
+        self.assertIsNone(self.db.row(1)["ci_deferred_at"])
+        self.assertNotIn("CI 待刷新", self.db.render(later)[0])
+
+    def test_ci_success_migration_does_not_invent_failed_success(self):
+        self.db.ingest_discovery([pr(1), pr(2)], True, T)
+        self.db.update_ci(1, "passed", now=T)
+        self.db.update_ci(2, "unknown", complete=False, now=T)
+        # Reproduce old version: ci_checked_at was overwritten by failed attempts.
+        self.db.conn.execute("UPDATE prs SET ci_checked_at=? WHERE number=2", (T,))
+        for col in ("ci_success_at", "ci_attempted_at", "ci_deferred_at", "ci_deferred_reason"):
+            self.db.conn.execute(f"ALTER TABLE prs DROP COLUMN {col}")
+        self.db.conn.commit()
+        self.db.close()
+        fixture=Path(self.tmp.name)/"legacy.yaml"
+        fixture.write_text('# PR Watch V1: explicit keep rules take precedence over exclusions.\n# Unmatched paths are included; do not expand exclusions automatically.\nversion: 1\nkeep:\n  - .github/**\n  - tests/e2e/common/**\n  - tests/e2e/doctests/**\n  - tests/e2e/nightly/**/scripts/**\n  - tests/ut/_tools/**\n  - tests/ut/tools/**\nexclude:\n  - vllm_ascend/**\n  - docs/source/tutorials/models/**\n  - docs/source/user_guide/feature_guide/**\n  - docs/source/user_guide/support_matrix/**\n  - tests/SIT/cases/models/**\n  - tests/SIT/cases/features/**\n  - tests/e2e/pull_request/**\n  - tests/e2e/nightly/**\n  - tests/ut/**/test_*.py\n')
+        self.db = WatchDB(Path(self.tmp.name) / "watch.db", fixture)
+        self.assertEqual(self.db.row(1)["ci_success_at"], T)
+        self.assertEqual(self.db.row(1)["ci_attempted_at"], T)
+        self.assertIsNone(self.db.row(2)["ci_success_at"])
+        self.assertIsNone(self.db.row(2)["ci_checked_at"])
+        self.assertIsNone(self.db.row(2)["ci_attempted_at"])
+
 
 class CITests(unittest.TestCase):
     def test_states(self):
@@ -289,3 +356,21 @@ class CITests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class ScopeV2Tests(unittest.TestCase):
+    def test_root_glob_and_semantic_cache(self):
+        with tempfile.TemporaryDirectory() as t:
+            p=Path(t);r=p/'rules';r.write_text('version: 2\nkeep: [".github/**", "tests/ut/_tools/**"]\nexclude: ["/*.patch", "vllm_ascend/**", "tests/ut/**/test_*.py"]\n')
+            db=WatchDB(p/'db',r)
+            self.assertFalse(db.rules.included('a.patch'));self.assertTrue(db.rules.included('nested/a.patch'))
+            db.ingest_discovery([pr()],True,T);db.update_detail(1,['tests/ut/_tools/test_model.py'],now=T)
+            self.assertFalse(db.row(1)['matched']);self.assertEqual(len(db.semantic_pending(T)),1)
+            db.apply_scope_decision(1,'include','通用mock工具', 'a','main');self.assertTrue(db.row(1)['matched'])
+            db.update_detail(1,['.github/a.yml'],now=T)
+            with self.assertRaises(ValueError):db.apply_scope_decision(1,'exclude','model test','a','main')
+            db.close()
+    def test_initial_observation_not_recent(self):
+        with tempfile.TemporaryDirectory() as t:
+            p=Path(t);r=p/'rules';r.write_text('version: 2\nkeep: [".github/**"]\nexclude: []\n')
+            db=WatchDB(p/'db',r);db.ingest_discovery([pr()],True,T);db.update_detail(1,['.github/a.yml'],now=T)
+            a,_=db.render(T);self.assertIn('暂无近期更新。',a);db.close()

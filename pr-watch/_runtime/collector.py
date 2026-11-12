@@ -63,29 +63,42 @@ def is_transient(response):
 class Bridge:
     def __init__(self, queue, budget_seconds=720, request_timeout=90):
         self.queue=Path(queue);self.queue.mkdir(parents=True,exist_ok=True)
+        self.budget_seconds=budget_seconds
         self.deadline=time.monotonic()+budget_seconds
+        self.phase_deadline=None
         self.request_timeout=request_timeout
-        self.metrics={'rest_requests':0,'graphql_queries':0,'graphql_cost':None,'response_bytes':0,'file_list_bytes':0}
+        self.metrics={'rest_requests':0,'requests_queued':0,'graphql_queries':0,'graphql_cost':None,'response_bytes':0,'file_list_bytes':0}
         self.events=[]
-    def left(self): return self.deadline-time.monotonic()
+    def left(self):
+        return min(self.deadline,self.phase_deadline if self.phase_deadline is not None else float('inf'))-time.monotonic()
     def get(self,url):
         safe_url(url)
         for attempt in range(3):
             if self.left()<=0: raise BudgetError('round time budget exhausted')
-            seq=self.metrics['rest_requests']+1
-            self.metrics['rest_requests']=seq
+            seq=self.metrics['requests_queued']+1
+            self.metrics['requests_queued']=seq
             request=self.queue/f'request-{seq:06d}.json';response=self.queue/f'response-{seq:06d}.json'
-            atomic_json(request,{'id':seq,'method':'GET','url':url,'requested_at':iso()})
+            atomic_json(request,{'id':seq,'method':'GET','url':url,'requested_at':iso(),'expires_at_epoch':time.time()+min(self.request_timeout,self.left())})
             until=time.monotonic()+min(self.request_timeout,self.left())
             while not response.exists():
-                if time.monotonic()>=until: raise BudgetError('connector response not received before request/round deadline')
+                if time.monotonic()>=until:
+                    # A queued request is not proof of an actual GitHub attempt.
+                    marker=self.queue/f'dispatch-{seq:06d}.json'
+                    if marker.exists():
+                        dispatched=json.loads(marker.read_text())
+                        if dispatched.get('id')==seq and dispatched.get('attempted') is True:self.metrics['rest_requests']+=1
+                    raise BudgetError('connector response not received before request/phase deadline')
                 time.sleep(.15)
             data=json.loads(response.read_text())
             if data.get('id',seq)!=seq: raise CoverageError('bridge response ID mismatch')
+            if data.get('attempted',True):self.metrics['rest_requests']+=1
             self.metrics['response_bytes']+=response.stat().st_size
             if '/files?' in url:self.metrics['file_list_bytes']+=response.stat().st_size
             # Raw API responses and unrelated patches are transient, never persistent caches.
             response.unlink();request.unlink(missing_ok=True)
+            (self.queue/f'dispatch-{seq:06d}.json').unlink(missing_ok=True)
+            if data.get('budget_expired') and not data.get('attempted',True):
+                raise BudgetError('Agent skipped an expired undispatched GET')
             if data.get('ok'):
                 return data['data']
             status=data.get('status');error=str(data.get('error','connector GET failed'))[:300]
@@ -242,126 +255,207 @@ def probe_activity(db,api,pr,now):
     db.record_activity_probe(n,'inactive',now);return 'inactive'
 
 
+def budget_left(api):
+    """Both GET/retry waits and loop scheduling honor the current phase deadline."""
+    end=min(getattr(api,'deadline',float('inf')),getattr(api,'phase_deadline',None) or float('inf'))
+    return end-time.monotonic()
+
+
+@contextmanager
+def phase_limit(api,deadline):
+    old=getattr(api,'phase_deadline',None)
+    api.phase_deadline=deadline
+    try:yield
+    finally:api.phase_deadline=old
+
+
+
 def prepare(directory,api,batch_limit=60,round_id=None,now=None):
     directory=Path(directory);now=iso(now);round_id=round_id or ('round-'+now.replace(':','').replace('-','')+'-'+uuid.uuid4().hex[:6])
     work=directory/'work'/round_id;work.mkdir(parents=True,exist_ok=True)
     db=WatchDB(directory/'pr_watch.db',directory/'exclude.yaml')
-    result={'round_id':round_id,'started_at':now,'discovery_complete':False,'gaps':[],'summary_requests':0,'file_prs':0,'ci_prs':0,'closed':0,'activity_probes':0,'finished_at':None}
-    requests=[];prs=[];index={};start=time.monotonic()
+    result={'round_id':round_id,'started_at':now,'discovery_complete':False,'gaps':[],'deferrals':[],
+            'summary_requests':0,'file_prs':0,'ci_prs':0,'closed':0,'activity_probes':0,
+            'activity_probes_completed':0,'init_processed':0,'ci_due':0,'ci_existing_refreshed':0,
+            'ci_existing_attempted':0,'ci_new_refreshed':0,'ci_new_attempted':0,'ci_deferred':0,'finished_at':None}
+    requests=[];prs=[];index={};start=time.monotonic();attempted_ci=set();deferred_ci=set()
     def gap(scope,err):
         result['gaps'].append({'scope':scope,'at':iso(),'description':str(err)[:400]})
+    def defer(phase,numbers,reason='phase_budget_exhausted',ci=False):
+        numbers=list(dict.fromkeys(numbers))
+        if not numbers:return
+        result['deferrals'].append({'phase':phase,'reason':reason,'at':iso(),'count':len(numbers),'pr_numbers':numbers})
+        gap(phase,f'{len(numbers)} PRs deferred: {reason}; not treated as checked')
+        if ci:
+            deferred_ci.update(numbers)
+            db.mark_ci_deferred(numbers,now,reason=reason)
+    def checked_ci(numbers,kind):
+        numbers=list(numbers)
+        for i,n in enumerate(numbers):
+            if budget_left(api)<=0:
+                defer(kind+' CI',numbers[i:],ci=True);break
+            before=api.metrics['rest_requests'];budget_failure=False
+            try:
+                row=db.row(n);pr=index.get(n) or api.get(f'{ROOT}/pulls/{n}')
+                if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref']:
+                    raise CoverageError('head/base changed during CI collection')
+                ci=collect_ci(api,pr)
+                final=api.get(f'{ROOT}/pulls/{n}')
+                if final['head']['sha']!=row['head_sha'] or final['base']['ref']!=row['base_ref'] or final.get('state')!='open':
+                    raise CoverageError('head/base/state changed during CI collection; deferred')
+                if final.get('merge_commit_sha')!=pr.get('merge_commit_sha'):
+                    raise CoverageError('merge reference changed during CI collection; deferred')
+                db.update_ci(n,ci['state'],ci['ci_gate'],now=now,complete=ci['complete'],head_sha=row['head_sha'],base_ref=row['base_ref'],activity_at=ci['activity_at'])
+                if ci['complete']:
+                    result['ci_prs']+=1;result['ci_'+kind+'_refreshed']+=1
+                else:gap(f'PR {n} CI','Actions workflow identity unavailable; status unknown')
+            except (CoverageError,KeyError,ValueError) as e:
+                budget_failure=isinstance(e,BudgetError)
+                if api.metrics['rest_requests']>before:
+                    db.update_ci(n,'unknown',now=now,complete=False)
+                    if not budget_failure:gap(f'PR {n} CI',e)
+                elif not budget_failure:gap(f'PR {n} CI',e)
+            finally:
+                if api.metrics['rest_requests']>before:
+                    attempted_ci.add(n);result['ci_'+kind+'_attempted']+=1
+            if budget_failure:
+                defer(kind+' CI',numbers[i:],ci=True);break
     try:
         try:
             prs=pages(api,'pulls?state=open&sort=created&direction=desc')
             if len({p['number'] for p in prs})!=len(prs):raise CoverageError('duplicate PR during discovery pagination')
             result['discovery_complete']=True
         except CoverageError as e:
-            # No partial-list archive decisions. Failed discovery does not erase cache.
             gap('open PR discovery',e);prs=[]
         discovery=db.ingest_discovery(prs,complete=result['discovery_complete'],now=now)
         index={p['number']:p for p in prs}
         result['open_prs']=len(prs) if result['discovery_complete'] else None
         if result['discovery_complete']:
-            for n in discovery['missing']:
-                row=db.row(n)
-                if not row['matched']:continue
-                try:
-                    pr=api.get(f'{ROOT}/pulls/{n}')
-                    if pr.get('state')=='closed' and pr.get('closed_at'):
-                        db.confirm_closed(n,'merged' if pr.get('merged_at') else 'closed',pr['closed_at'],pr.get('merged_at'));result['closed']+=1
-                except CoverageError as e:gap(f'PR {n} final state',e)
-            for n in activity_probe_candidates(db,now,limit=20):
-                try:
-                    result['activity_probes']+=1
-                    probe_activity(db,api,index[n],now)
-                except (CoverageError,KeyError,ValueError) as e:
-                    db.record_activity_probe(n,'unknown',now);gap(f'PR {n} 30-day activity',e)
             scope=set(db.scope_active(now))
-            # Probes can activate an old PR after ingest_discovery chose its queue.
-            needs=[n for n in scope if n in index and (db.row(n)['changed_files'] is None or db.row(n)['files_sha']!=db.row(n)['head_sha'] or db.row(n)['files_base']!=db.row(n)['base_ref'])]
-            selected=selection(db,needs,batch_limit,now)
-            for n in selected:
-                try:
-                    row=db.row(n);files=pages(api,f'pulls/{n}/files',cap=30)
-                    result['file_prs']+=1
-                    pr=api.get(f'{ROOT}/pulls/{n}')
-                    if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref'] or pr.get('state')!='open':
-                        raise CoverageError('head/base/state changed during collection; deferred')
-                    if not db.rules.matches(files):
-                        db.update_detail(n,strip_files(files),head_sha=row['head_sha'],base_ref=row['base_ref']);continue
-                    commit=api.get(f'{ROOT}/git/commits/{row["head_sha"]}')
-                    latest=commit.get('committer',{}).get('date') or commit.get('author',{}).get('date')
-                    if not latest:raise CoverageError('latest commit time missing')
-                    db.record_activity(n,latest,'commit',f'Git commit {row["head_sha"]} committer/author date')
-                    db.update_detail(n,strip_files(files),pr['additions'],pr['deletions'],latest,head_sha=row['head_sha'],base_ref=row['base_ref'])
-                    index[n]=pr
-                    if not db.cached_summary(n):
-                        relevant=[f for f in files if db.rules.matches([f])]
+            existing_due=[n for n in db.ci_due(now) if n in scope and n in index]
+            result['ci_due']=len(existing_due);result['ci_due_existing']=len(existing_due)
+            # Protect a small, bounded tail for recent-scope initialization. A short
+            # remaining round reserves only 35%, avoiding a zero-length CI phase.
+            round_end=getattr(api,'deadline',float('inf'))
+            remaining=max(0,round_end-time.monotonic())
+            total=getattr(api,'budget_seconds',720)
+            reserve=min(120,max(90,total*.20),remaining*.35)
+            result['initialization_reserve_seconds']=round(reserve,3)
+            existing_end=round_end-reserve if round_end!=float('inf') else None
+            with phase_limit(api,existing_end):
+                checked_ci(existing_due,'existing')
+
+            # Backlog is bounded even if all old tracked CI finishes early. Unused
+            # round time can then check newly matched PRs rather than disappear.
+            backlog_end=min(round_end,time.monotonic()+reserve)
+            with phase_limit(api,backlog_end):
+                missing=[n for n in discovery['missing'] if db.row(n)['matched']]
+                for i,n in enumerate(missing):
+                    if budget_left(api)<=0:defer('final state',missing[i:]);break
+                    try:
+                        pr=api.get(f'{ROOT}/pulls/{n}')
+                        if pr.get('state')=='closed' and pr.get('closed_at'):
+                            db.confirm_closed(n,'merged' if pr.get('merged_at') else 'closed',pr['closed_at'],pr.get('merged_at'));result['closed']+=1
+                    except BudgetError:defer('final state',missing[i:]);break
+                    except CoverageError as e:gap(f'PR {n} final state',e)
+
+                # Probes cannot eat the whole initialization tail: leave most of it
+                # for confirmed recent PR file screening and summary recovery.
+                probes=activity_probe_candidates(db,now,limit=20)
+                probe_end=min(backlog_end,time.monotonic()+max(0,budget_left(api))*.35)
+                with phase_limit(api,probe_end):
+                    for i,n in enumerate(probes):
+                        if budget_left(api)<=0:defer('activity probes',probes[i:]);break
+                        before=api.metrics['rest_requests']
+                        try:
+                            probe_activity(db,api,index[n],now);result['activity_probes_completed']+=1
+                        except BudgetError:
+                            if api.metrics['rest_requests']>before:db.record_activity_probe(n,'unknown',now)
+                            defer('activity probes',probes[i:]);break
+                        except (CoverageError,KeyError,ValueError) as e:
+                            if api.metrics['rest_requests']>before:db.record_activity_probe(n,'unknown',now)
+                            gap(f'PR {n} 30-day activity',e)
+                        finally:
+                            if api.metrics['rest_requests']>before:result['activity_probes']+=1
+                scope=set(db.scope_active(now))
+                needs=[n for n in scope if n in index and (db.row(n)['changed_files'] is None or db.row(n)['files_sha']!=db.row(n)['head_sha'] or db.row(n)['files_base']!=db.row(n)['base_ref'])]
+                selected=selection(db,needs,batch_limit,now);result['init_selected']=len(selected)
+                for i,n in enumerate(selected):
+                    if budget_left(api)<=0:defer('files/detail',selected[i:]);break
+                    try:
+                        row=db.row(n);files=pages(api,f'pulls/{n}/files',cap=30)
+                        result['file_prs']+=1
+                        pr=api.get(f'{ROOT}/pulls/{n}')
+                        if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref'] or pr.get('state')!='open':
+                            raise CoverageError('head/base/state changed during collection; deferred')
+                        if not db.rules.matches(files):
+                            db.update_detail(n,strip_files(files),head_sha=row['head_sha'],base_ref=row['base_ref']);result['init_processed']+=1;continue
+                        commit=api.get(f'{ROOT}/git/commits/{row["head_sha"]}')
+                        latest=commit.get('committer',{}).get('date') or commit.get('author',{}).get('date')
+                        if not latest:raise CoverageError('latest commit time missing')
+                        db.record_activity(n,latest,'commit',f'Git commit {row["head_sha"]} committer/author date')
+                        db.update_detail(n,strip_files(files),pr['additions'],pr['deletions'],latest,head_sha=row['head_sha'],base_ref=row['base_ref'])
+                        result['init_processed']+=1;index[n]=pr
+                        if not db.cached_summary(n):
+                            requests.append({'number':n,'head_sha':row['head_sha'],'base_ref':row['base_ref'],'title':pr['title'],'body':pr.get('body') or '',
+                                             'relevant_files':[f for f in files if db.rules.matches([f])]})
+                    except BudgetError:defer('files/detail',selected[i:]);break
+                    except (CoverageError,KeyError,ValueError) as e:gap(f'PR {n} files/detail',e)
+                rematched=[]
+                for r in db.conn.execute("SELECT number FROM prs WHERE state='open' AND matched=1 AND (detail_sha IS NULL OR detail_sha!=head_sha OR detail_base!=base_ref)"):
+                    n=r[0];row=db.row(n)
+                    if n in selected or n not in scope:continue
+                    if row['files_sha']==row['head_sha'] and row['files_base']==row['base_ref']:rematched.append(n)
+                for i,n in enumerate(rematched):
+                    if budget_left(api)<=0:defer('rematched detail',rematched[i:]);break
+                    try:
+                        row=db.row(n);pr=api.get(f'{ROOT}/pulls/{n}')
+                        if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref']:raise CoverageError('head/base changed; deferred')
+                        commit=api.get(f'{ROOT}/git/commits/{row["head_sha"]}')
+                        latest=commit['committer']['date']
+                        db.record_activity(n,latest,'commit',f'Git commit {row["head_sha"]} committer date')
+                        db.update_detail(n,row['changed_files'],pr['additions'],pr['deletions'],latest,head_sha=row['head_sha'],base_ref=row['base_ref']);index[n]=pr
+                    except BudgetError:defer('rematched detail',rematched[i:]);break
+                    except (CoverageError,KeyError,ValueError) as e:gap(f'PR {n} rematched detail',e)
+                known={r['number'] for r in requests};missing_summaries=[]
+                for r in db.conn.execute("SELECT number FROM prs WHERE state='open' AND matched=1"):
+                    n=r[0];row=db.row(n)
+                    if n not in scope or n in known or db.cached_summary(n):continue
+                    if row['detail_sha']==row['head_sha'] and row['detail_base']==row['base_ref']:missing_summaries.append(n)
+                for i,n in enumerate(missing_summaries):
+                    if budget_left(api)<=0:defer('summary evidence',missing_summaries[i:]);break
+                    try:
+                        row=db.row(n);files=pages(api,f'pulls/{n}/files',cap=30)
+                        pr=index.get(n) or api.get(f'{ROOT}/pulls/{n}')
                         requests.append({'number':n,'head_sha':row['head_sha'],'base_ref':row['base_ref'],'title':pr['title'],'body':pr.get('body') or '',
-                                         'relevant_files':relevant})
-                except CoverageError as e:gap(f'PR {n} files/detail',e)
-            # Cache-only rule changes can newly match a PR without needing files again.
-            for r in list(db.conn.execute("SELECT number FROM prs WHERE state='open' AND matched=1 AND (detail_sha IS NULL OR detail_sha!=head_sha OR detail_base!=base_ref)")):
-                n=r[0]
-                if n in selected or n not in scope:continue
-                row=db.row(n)
-                if row['files_sha']!=row['head_sha'] or row['files_base']!=row['base_ref']:
-                    continue
-                try:
-                    pr=api.get(f'{ROOT}/pulls/{n}')
-                    if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref']:raise CoverageError('head/base changed; deferred')
-                    commit=api.get(f'{ROOT}/git/commits/{row["head_sha"]}')
-                    latest=commit['committer']['date']
-                    db.record_activity(n,latest,'commit',f'Git commit {row["head_sha"]} committer date')
-                    db.update_detail(n,row['changed_files'],pr['additions'],pr['deletions'],latest,head_sha=row['head_sha'],base_ref=row['base_ref'])
-                    index[n]=pr
-                except (CoverageError,KeyError) as e:gap(f'PR {n} rematched detail',e)
-            for n in db.ci_due(now):
-                if n not in scope:continue
-                try:
-                    row=db.row(n);pr=index.get(n) or api.get(f'{ROOT}/pulls/{n}')
-                    if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref']:raise CoverageError('head/base changed during CI collection')
-                    ci=collect_ci(api,pr)
-                    final=api.get(f'{ROOT}/pulls/{n}')
-                    if final['head']['sha']!=row['head_sha'] or final['base']['ref']!=row['base_ref'] or final.get('state')!='open':
-                        raise CoverageError('head/base/state changed during CI collection; deferred')
-                    if final.get('merge_commit_sha')!=pr.get('merge_commit_sha'):
-                        raise CoverageError('merge reference changed during CI collection; deferred')
-                    db.update_ci(n,ci['state'],ci['ci_gate'],now=now,complete=ci['complete'],head_sha=row['head_sha'],base_ref=row['base_ref'],activity_at=ci['activity_at'])
-                    result['ci_prs']+=1
-                    if not ci['complete']:gap(f'PR {n} CI','Actions workflow identity unavailable; status unknown')
-                except CoverageError as e:
-                    gap(f'PR {n} CI',e);db.update_ci(n,'unknown',now=now,complete=False)
-            # Retry missing summaries from earlier partial rounds; retrieve patches only
-            # for these exceptional cache-recovery cases, never for an unchanged cached summary.
+                                         'relevant_files':[f for f in files if db.rules.matches([f])]})
+                    except BudgetError:defer('summary evidence',missing_summaries[i:]);break
+                    except CoverageError as e:gap(f'PR {n} summary evidence',e)
+
+            # Only now consider CI for new matches. Never retry an existing attempt
+            # within the same round or silently mark a non-requested PR checked.
+            scope=set(db.scope_active(now));existing_ids=set(existing_due)
+            new_due=[n for n in db.ci_due(now) if n in scope and n in index and n not in existing_ids and n not in attempted_ci]
+            result['ci_due_new']=len(new_due);result['ci_due']+=len(new_due)
+            with phase_limit(api,round_end):checked_ci(new_due,'new')
+        if db.rules.policy_version >= 2:
             known={r['number'] for r in requests}
-            for r in list(db.conn.execute("SELECT number FROM prs WHERE state='open' AND matched=1")):
-                n=r[0]
-                if n not in scope or n in known or db.cached_summary(n):continue
-                row=db.row(n)
-                if row['detail_sha']!=row['head_sha'] or row['detail_base']!=row['base_ref']:continue
-                try:
-                    files=pages(api,f'pulls/{n}/files',cap=30)
-                    pr=index.get(n) or api.get(f'{ROOT}/pulls/{n}')
-                    requests.append({'number':n,'head_sha':row['head_sha'],'base_ref':row['base_ref'],'title':pr['title'],'body':pr.get('body') or '',
-                                     'relevant_files':[f for f in files if db.rules.matches([f])]})
-                except CoverageError as e:gap(f'PR {n} summary evidence',e)
-        result['summary_requests']=len(requests)
+            for row in db.semantic_pending(now):
+                if row['number'] not in known:
+                    requests.append(dict(number=row['number'],head_sha=row['head_sha'],base_ref=row['base_ref'],
+                        title=row['title'],cached_summary=db.cached_summary(row['number']),semantic_only=True,
+                        relevant_files=[f for f in row['changed_files'] if db.rules.matches([f])]))
+        result['summary_requests']=len(requests);result['ci_deferred']=len(deferred_ci)
         scoped=[db.row(n) for n in db.scope_active(now)]
-        result['scope_active_open']=len(scoped)
-        result['matched_open']=sum(bool(r['matched']) for r in scoped)
+        result['scope_active_open']=len(scoped);result['matched_open']=sum(bool(r['matched']) for r in scoped)
         result['pending_files']=sum(r['changed_files'] is None or r['files_sha']!=r['head_sha'] or r['files_base']!=r['base_ref'] for r in scoped)
-        cutoff=instant(now)-timedelta(days=30)
-        active_numbers={r['number'] for r in scoped}
-        known_open=db._last_complete_open_ids()
+        cutoff=instant(now)-timedelta(days=30);active_numbers={r['number'] for r in scoped};known_open=db._last_complete_open_ids()
         result['activity_unconfirmed']=sum((known_open is None or r[0] in known_open) and instant(db.row(r[0])['updated_at'])>=cutoff and r[0] not in active_numbers and db.row(r[0]).get('activity_probe_result')!='inactive' for r in db.conn.execute("SELECT number FROM prs WHERE state='open'"))
         result['coverage_limit']='Scope is verified recent activity only; CI-only reruns on old PRs without recent metadata updates are not exhaustively searched.'
         result['metrics']=dict(api.metrics);result['metrics']['elapsed_seconds']=round(time.monotonic()-start,3)
         result['finished_at']=iso();result['status']='partial' if result['gaps'] or result['pending_files'] or result['activity_unconfirmed'] else 'collected'
         db._meta('prepared_round',round_id);db.conn.commit()
-        atomic_json(work/'summary_requests.json',requests)
-        atomic_json(work/'result.json',result)
-        atomic_json(directory/'latest-round.json',result)
+        atomic_json(work/'summary_requests.json',requests);atomic_json(work/'result.json',result);atomic_json(directory/'latest-round.json',result)
         return result
     finally:db.close()
 
@@ -382,7 +476,9 @@ def finish(directory,round_id,summaries,now=None):
             if value.get('head_sha')!=req['head_sha']:raise CoverageError('summary SHA mismatch')
             if value.get('base_ref',req['base_ref'])!=req['base_ref']:raise CoverageError('summary base mismatch')
             db.update_detail(n,row['changed_files'],row['additions'],row['deletions'],row['latest_commit_at'],
-                             summary=value['summary'],summary_sha=req['head_sha'],head_sha=req['head_sha'],base_ref=req['base_ref'])
+                             summary=value.get('summary') or db.cached_summary(n),summary_sha=req['head_sha'],head_sha=req['head_sha'],base_ref=req['base_ref'])
+            if value.get('scope_decision'):
+                db.apply_scope_decision(n,value['scope_decision'],value['scope_reason'],req['head_sha'],req['base_ref'])
             applied+=1
         active,archive=db.render(now)
         if result['gaps']:

@@ -34,10 +34,23 @@ class Fake:
         if '/timeline?' in rel:return []
         raise AssertionError(url)
 
+class FakeTimed(Fake):
+    def __init__(self,prs,clock,budget=100,cost=10,overrides=None):
+        super().__init__(prs,overrides);self.clock=clock;self.budget_seconds=budget
+        self.deadline=clock[0]+budget;self.phase_deadline=None;self.cost=cost
+    def get(self,url):
+        left=budget_left(self)
+        if left<=0:raise BudgetError('no phase budget; no request issued')
+        data=super().get(url)
+        cost=self.cost(url) if callable(self.cost) else self.cost
+        self.clock[0]+=min(cost,left)
+        if cost>left:raise BudgetError('issued GET interrupted by phase deadline')
+        return data
+
 class Tests(unittest.TestCase):
     def setupdir(self):
         t=tempfile.TemporaryDirectory();self.addCleanup(t.cleanup);d=Path(t.name)
-        (d/'exclude.yaml').write_bytes(RULES.read_bytes());return d
+        (d/'exclude.yaml').write_text('# PR Watch V1: explicit keep rules take precedence over exclusions.\n# Unmatched paths are included; do not expand exclusions automatically.\nversion: 1\nkeep:\n  - .github/**\n  - tests/e2e/common/**\n  - tests/e2e/doctests/**\n  - tests/e2e/nightly/**/scripts/**\n  - tests/ut/_tools/**\n  - tests/ut/tools/**\nexclude:\n  - vllm_ascend/**\n  - docs/source/tutorials/models/**\n  - docs/source/user_guide/feature_guide/**\n  - docs/source/user_guide/support_matrix/**\n  - tests/SIT/cases/models/**\n  - tests/SIT/cases/features/**\n  - tests/e2e/pull_request/**\n  - tests/e2e/nightly/**\n  - tests/ut/**/test_*.py\n');return d
     def test_allowlist(self):
         safe_url(ROOT+'/pulls/1/files?per_page=100&page=1')
         for u in ('https://api.github.com/repos/x/y/pulls','https://api.github.com/repos/'+REPO+'/actions/jobs/1/logs',ROOT+'/pulls/1/comments',ROOT+'/contents/a'):
@@ -158,11 +171,78 @@ class Tests(unittest.TestCase):
     def test_ci_activity_uses_actual_timestamp_not_poll(self):
         p=pr();api=Fake([p],{'commits/a/status':{'statuses':[{'context':'docs','state':'success','created_at':'2026-11-01T00:00:00Z','updated_at':'2026-11-02T00:00:00Z'}]}})
         self.assertEqual(collect_ci(api,p)['activity_at'],'2026-11-02T00:00:00Z')
+    def seed_tracked(self,d,count=4):
+        ps=[pr(n,'a'+str(n)) for n in range(1,count+1)]
+        db=WatchDB(d/'pr_watch.db',d/'exclude.yaml')
+        old='2026-11-12T07:00:00Z';db.ingest_discovery(ps,True,old)
+        for p in ps:
+            n=p['number'];db.update_detail(n,[{'filename':'.github/a.yml'}],1,0,old,summary='cached',summary_sha=p['head']['sha'])
+            db.update_ci(n,'passed',now=old)
+        db.close();return ps,old
+    def test_existing_ci_before_backlog_with_reserve(self):
+        d=self.setupdir();ps,old=self.seed_tracked(d,4);ps.append(pr(10,'a10'))
+        clock=[0.0];api=FakeTimed(ps,clock,cost=lambda u:1 if '/pulls?' in u else 10)
+        with patch('collector.time.monotonic',side_effect=lambda:clock[0]):
+            r=prepare(d,api,round_id='timed',now=NOW)
+        file_index=next(i for i,u in enumerate(api.calls) if '/files?' in u)
+        check_index=next(i for i,u in enumerate(api.calls) if '/check-runs?' in u)
+        self.assertLess(check_index,file_index)
+        self.assertGreaterEqual(r['ci_existing_refreshed'],1)
+        self.assertGreaterEqual(r['init_processed'],1)
+        self.assertGreater(r['ci_deferred'],0)
+        db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
+        # The fourth old PR had no request and must retain its successful/attempt clocks.
+        self.assertEqual(db.row(4)['ci_checked_at'],old)
+        self.assertEqual(db.row(4)['ci_success_at'],old)
+        self.assertEqual(db.row(4)['ci_attempted_at'],old)
+    def test_zero_remaining_budget_does_not_touch_ci_clock(self):
+        d=self.setupdir();ps,old=self.seed_tracked(d,2);clock=[0.0]
+        api=FakeTimed(ps,clock,budget=100,cost=100)
+        with patch('collector.time.monotonic',side_effect=lambda:clock[0]):
+            r=prepare(d,api,round_id='zero',now=NOW)
+        self.assertEqual(r['ci_existing_attempted'],0);self.assertEqual(r['ci_deferred'],2)
+        self.assertEqual(len(api.calls),1)
+        db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
+        for n in (1,2):
+            self.assertEqual(db.row(n)['ci_success_at'],old);self.assertEqual(db.row(n)['ci_attempted_at'],old)
+    def test_failed_ci_attempt_rotates_next_round(self):
+        d=self.setupdir();ps,old=self.seed_tracked(d,3)
+        clock=[0.0];api=FakeTimed(ps,clock,cost=lambda u:1 if '/pulls?' in u else 100)
+        with patch('collector.time.monotonic',side_effect=lambda:clock[0]):
+            one=prepare(d,api,batch_limit=0,round_id='one',now=NOW)
+        self.assertEqual(one['ci_existing_attempted'],1);self.assertEqual(one['ci_existing_refreshed'],0)
+        clock=[0.0];second=FakeTimed(ps,clock,cost=lambda u:1 if '/pulls?' in u else 100)
+        with patch('collector.time.monotonic',side_effect=lambda:clock[0]):
+            two=prepare(d,second,batch_limit=0,round_id='two',now='2026-11-12T10:00:00Z')
+        first_check=next(u for u in api.calls if '/check-runs?' in u)
+        second_check=next(u for u in second.calls if '/check-runs?' in u)
+        self.assertIn('/a1/',first_check);self.assertIn('/a2/',second_check)
+    def test_probe_phase_leaves_time_for_files(self):
+        d=self.setupdir();old=self.old_pr(20);new=pr(10,'a10');clock=[0.0]
+        api=FakeTimed([old,new],clock,budget=300,cost=lambda u:1 if '/pulls?' in u else (60 if '/git/commits/a' in u and 'a10' not in u else 10))
+        with patch('collector.time.monotonic',side_effect=lambda:clock[0]):
+            r=prepare(d,api,round_id='probe',now=NOW)
+        self.assertTrue(any(x['phase']=='activity probes' for x in r['deferrals']))
+        self.assertGreaterEqual(r['init_processed'],1)
     def test_lock_nonblocking(self):
         d=self.setupdir()
         with round_lock(d):
             with self.assertRaises(CoverageError):
                 with round_lock(d):pass
+    def test_queued_timeout_is_not_actual_attempt(self):
+        d=self.setupdir();b=Bridge(d,budget_seconds=1,request_timeout=0)
+        with self.assertRaises(BudgetError):b.get(ROOT+'/pulls')
+        self.assertEqual(b.metrics['requests_queued'],1);self.assertEqual(b.metrics['rest_requests'],0)
+    def test_dispatch_marker_proves_attempt_on_timeout(self):
+        d=self.setupdir();b=Bridge(d,budget_seconds=1,request_timeout=0)
+        atomic_json(d/'dispatch-000001.json',{'id':1,'attempted':True})
+        with self.assertRaises(BudgetError):b.get(ROOT+'/pulls')
+        self.assertEqual(b.metrics['rest_requests'],1)
+    def test_expired_skipped_response_not_actual_attempt(self):
+        d=self.setupdir();b=Bridge(d,budget_seconds=1)
+        atomic_json(d/'response-000001.json',{'id':1,'ok':False,'attempted':False,'budget_expired':True})
+        with self.assertRaises(BudgetError):b.get(ROOT+'/pulls')
+        self.assertEqual(b.metrics['rest_requests'],0)
     def test_atomic_bridge_contract(self):
         d=self.setupdir();b=Bridge(d,1)
         atomic_json(d/'response-000001.json',{'id':1,'ok':True,'data':{'a':1}})

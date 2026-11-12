@@ -17,7 +17,14 @@ def archive_sections(text):
 
 def merge_archive(local,remote):
     sections=archive_sections(remote);sections.update(archive_sections(local))
+    pruned=set()
+    for text in (local,remote):
+        for raw in re.findall(r'<!-- pr-watch-pruned: (\[[^\n]*\]) -->',text):
+            pruned.update(int(n) for n in json.loads(raw))
+    for n in pruned:sections.pop(n,None)
     head=local.split('<a id=',1)[0].replace('暂无归档。','').strip()
+    head=re.sub(r'<!-- pr-watch-pruned: \[[^\n]*\] -->','',head).strip()
+    if pruned:head+='\n\n<!-- pr-watch-pruned: '+json.dumps(sorted(pruned))+' -->'
     if not sections:return head+'\n\n暂无归档。\n'
     return head+'\n\n'+'\n\n'.join(c for _,c in sorted(sections.values(),reverse=True))+'\n'
 

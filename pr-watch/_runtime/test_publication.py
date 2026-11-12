@@ -12,3 +12,10 @@ class Tests(unittest.TestCase):
  def test_bad(self):
   with self.assertRaises(ValueError):archive_sections('<a id="pr-1"></a>\nmissing time')
 if __name__=='__main__':unittest.main()
+
+class PrunedArchiveTest(unittest.TestCase):
+    def test_explicit_prune_survives_remote_merge(self):
+        from publication import merge_archive
+        remote='# PR 归档\n\n<a id="pr-21681"></a>\n### PR\n**已合入：** 2026-11-11 01:00:00\n'
+        result=merge_archive('# PR 归档\n\n<!-- pr-watch-pruned: [21681] -->\n\n暂无归档。',remote)
+        self.assertNotIn('<a id="pr-21681">',result);self.assertIn('pr-watch-pruned: [21681]',result)

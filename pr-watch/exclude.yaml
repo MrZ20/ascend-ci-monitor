@@ -1,20 +1,47 @@
-# PR Watch V1: explicit keep rules take precedence over exclusions.
-# Unmatched paths are included; do not expand exclusions automatically.
-version: 1
+version: 2
 keep:
-  - .github/**
-  - tests/e2e/common/**
-  - tests/e2e/doctests/**
-  - tests/e2e/nightly/**/scripts/**
-  - tests/ut/_tools/**
-  - tests/ut/tools/**
+  - '.github/**'
+  - 'docs/source/getting_started/**'
+  - 'docs/source/developer_guide/contribution/**'
+  - 'docs/source/developer_guide/index.md'
+  - 'docs/source/community/slash-commands.md'
+  - 'docs/hooks/**'
+  - 'docs/overrides/**'
+  - 'docs/source/javascripts/**'
+  - 'docs/source/stylesheets/**'
+  - 'docs/Makefile'
+  - 'docs/README.md'
+  - 'docs/requirements*.txt'
+  - 'mkdocs.yml'
+  - 'tests/e2e/doctests/**'
+  - 'tests/e2e/common/multi_node/**'
+  - 'tests/e2e/common/single_node/**'
+  - 'tests/e2e/nightly/**/scripts/**'
+  - 'tests/ut/_tools/**'
+  - 'tests/ut/tools/**'
 exclude:
-  - vllm_ascend/**
-  - docs/source/tutorials/models/**
-  - docs/source/user_guide/feature_guide/**
-  - docs/source/user_guide/support_matrix/**
-  - tests/SIT/cases/models/**
-  - tests/SIT/cases/features/**
-  - tests/e2e/pull_request/**
-  - tests/e2e/nightly/**
-  - tests/ut/**/test_*.py
+  - 'vllm_ascend/**'
+  - 'recipes/**'
+  - 'release_notes/fragments/**'
+  - 'docs/source/locale/**'
+  - 'docs/source/tutorials/**'
+  - 'docs/source/user_guide/**'
+  - 'docs/source/developer_guide/Design_Documents/**'
+  - 'docs/source/developer_guide/evaluation/**'
+  - 'docs/source/developer_guide/l2_phash_optimization.md'
+  - 'docs/source/developer_guide/deepseek_v41_qli_candidate.md'
+  - 'docs/source/community/**'
+  - 'examples/**'
+  - 'tests/SIT/cases/**'
+  - 'tests/e2e/pull_request/**'
+  - 'tests/e2e/nightly/**'
+  - 'tests/e2e/ops/**'
+  - 'tests/e2e/common/rlhf/**'
+  - 'tests/e2e/common/kv_pool/**'
+  - 'tests/e2e/common/kvpp.py'
+  - 'tests/native/**'
+  - 'tests/ut/**/test_*.py'
+  - 'tools/rlhf/**'
+  - '/*.patch'
+  - '/*.diff'
+  - '分析.txt'
