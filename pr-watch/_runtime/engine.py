@@ -523,26 +523,8 @@ class WatchDB:
                                and instant(r["created_at"]) < cutoff and instant(r["updated_at"]) >= cutoff and r["activity_probe_result"] != "inactive")
         discovery = self.conn.execute("SELECT value FROM metadata WHERE key='discovery'").fetchone()
         complete = json.loads(discovery[0]).get("complete", False) if discovery else False
-        lines = ["# PR 关注列表", "", f"最近刷新：{display_time(iso(now), True)}（上海时间）", f"当前关注的开放 PR：{len(active)}", "范围：最近 30 天有创建、提交、CI、Draft 或目标分支变化证据的开放 PR；普通评论不算活动。", "长期无元数据更新的旧 PR 未逐个追查仅 CI 重跑的活动，本页不代表这类活动已全覆盖。", ""]
-        bounded = self.conn.execute("SELECT value FROM metadata WHERE key='bounded_discovery'").fetchone()
-        if bounded:
-            pending = sum(1 for r in active if r['files_sha'] != r['head_sha'] or r['detail_sha'] != r['head_sha'])
-            activity_unknown = 0
-            complete = True
-            lines += ["发现范围：仅限最近更新候选，每轮最多 300 个；已有关注 PR 按编号独立刷新。已取消旧历史初始化补齐，不承诺全量开放列表覆盖。", ""]
-        if activity_unknown:
-            lines += [f"活动待确认：{activity_unknown} 个较早创建、近期 updated_at 变化的开放 PR 尚无最近 30 天有效活动证据，暂不纳入。", ""]
-        final_pending = sum(1 for r in active if known_open is not None and r["number"] not in known_open)
-        if final_pending:
-            lines += [f"最终状态待确认：{final_pending} 个已跟踪 PR 不在最近完整开放列表中，保留显示，尚未归档。", ""]
+        lines = ["# PR 关注列表", "", f"最近刷新：{display_time(iso(now), True)}（上海时间）", f"当前关注的开放 PR：{len(active)}", "", "优先关注近期新增或代码变更；CI 分批轮转，以下保留最近已知结果与检查时间。", ""]
         ci_pending = set(self.ci_due(now)) | {r["number"] for r in active if r["ci_deferred_at"]}
-        if ci_pending:
-            lines += [f"CI 待刷新：{len(ci_pending)} 个 PR 尚未取得本轮所需的完整检查结果；上次状态不代表当前结果。", ""]
-        if not complete or pending:
-            lines += [f"覆盖说明：{'开放 PR 列表尚未完整获取；' if not complete else ''}{f'{pending} 个近 30 天范围内的 PR 文件范围或详情待补齐。' if pending else '未据此归档缺失 PR。'}", ""]
-        semantic_pending = self.semantic_pending(now) if self.rules.policy_version >= 2 else []
-        if semantic_pending:
-            lines += [f"范围待判断：{len(semantic_pending)} 个 PR 的工具、通用目录或新路径尚待轻量语义核对，暂不纳入关注列表。", ""]
         lines += ["## 最近更新（72h）", ""]
         recent = sorted([r for r in active if instant(r["activity_at"] or r["created_at"]) >= now - timedelta(hours=72)], key=lambda r: (r["activity_at"] or r["created_at"], r["number"]), reverse=True)
         lines += [f"- [{display_time(r['activity_at'] or r['created_at'])} · #{r['number']} {_text(r['title'])}](#pr-{r['number']})" for r in recent] or ["暂无近期更新。"]

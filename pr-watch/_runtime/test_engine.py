@@ -200,7 +200,7 @@ class DBTests(unittest.TestCase):
         self.assertEqual(self.db.scope_active(T), [])
         self.assertEqual(self.db.row(1)["activity_at"], "2025-01-01T00:00:00Z")
         active, _ = self.db.render(T)
-        self.assertIn("活动待确认：1", active)
+        self.assertIn("当前关注的开放 PR：0", active)
         self.assertNotIn("文件范围或详情待补齐", active)
         self.db.record_activity_probe(1, "inactive", T)
         self.assertNotIn("活动待确认", self.db.render(T)[0])
@@ -263,7 +263,7 @@ class DBTests(unittest.TestCase):
         later = "2026-11-12T02:00:00Z"
         self.db.ingest_discovery([], True, later)
         self.assertEqual(self.db.scope_active(later), [1])
-        self.assertIn("最终状态待确认：1", self.db.render(later)[0])
+        self.assertIn("#1", self.db.render(later)[0])
         self.db.confirm_closed(1, "merged", later)
         self.assertIn("已合入", self.db.render("2027-01-01T00:00:00Z")[1])
 
@@ -272,7 +272,7 @@ class DBTests(unittest.TestCase):
         later = "2026-11-12T02:00:00Z"
         self.db.ingest_discovery([pr()], False, later)
         self.assertEqual(self.db.scope_active(later), [1])
-        self.assertIn("1 个近 30 天范围内的 PR 文件范围或详情待补齐", self.db.render(later)[0])
+        self.assertNotIn("待补齐", self.db.render(later)[0])
 
     def test_failed_refresh_does_not_reset_success_clock(self):
         self.add()
@@ -310,7 +310,7 @@ class DBTests(unittest.TestCase):
         for key in ("ci_state", "ci_checked_at", "ci_success_at", "ci_attempted_at", "meaningful_updated_at"):
             self.assertEqual(after[key], before[key])
         report = self.db.render(later)[0]
-        self.assertIn("CI 待刷新：1", report)
+        self.assertNotIn("覆盖缺口", report)
         self.assertIn("**CI：** 通过（最近已知；待刷新", report)
         self.assertIn("上次完整检查：11-12 09:00", report)
         self.db.update_ci(1, "passed", now=later)

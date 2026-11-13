@@ -2,7 +2,7 @@
 from pathlib import Path
 import re,json,hashlib
 
-RUNTIME=('engine.py','collector.py','publication.py','test_engine.py','test_collector.py','test_publication.py','operations.txt')
+RUNTIME=('engine.py','collector.py','publication.py','test_engine.py','test_collector.py','test_publication.py','operations.txt','bridge_projection.js')
 def archive_sections(text):
     chunks=re.split(r'(?=<a id="pr-\d+"></a>)',text)
     out={}

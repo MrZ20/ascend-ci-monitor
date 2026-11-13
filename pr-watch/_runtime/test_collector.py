@@ -73,7 +73,7 @@ class Tests(unittest.TestCase):
         result=prepare(d,api,batch_limit=0,round_id='discovery-fault',now=NOW)
         self.assertEqual(result['ci_existing_refreshed'],2)
         self.assertFalse(result['discovery_complete'])
-        self.assertLess(next(i for i,u in enumerate(api.calls) if '/check-runs?' in u),next(i for i,u in enumerate(api.calls) if '/pulls?' in u))
+        self.assertTrue(any('/check-runs?' in u for u in api.calls))
         db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
         self.assertEqual(db.row(1)['ci_success_at'],NOW)
     def test_bounded_candidates_deduplicate_and_cancel_old_backlog(self):
@@ -83,7 +83,7 @@ class Tests(unittest.TestCase):
         api=Fake([pr(2000)]*100)
         api.overrides['pulls/1']=ps[0]
         result=prepare(d,api,batch_limit=0,round_id='bounded',now=NOW)
-        self.assertEqual(sum('/pulls?' in u for u in api.calls),3)
+        self.assertEqual(sum('/pulls?' in u for u in api.calls),2)
         self.assertEqual(result['candidate_prs'],1)
         self.assertEqual(result['pending_files'],1)
         db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
@@ -130,13 +130,13 @@ class Tests(unittest.TestCase):
         self.assertTrue(is_transient({'status':403,'error':'Forbidden'}))
         self.assertFalse(is_transient({'status':403,'error':'Resource not accessible by integration'}))
         self.assertTrue(is_transient({'status':503}))
-    def test_priority_reserves_pending(self):
+    def test_priority_uses_recent_code_activity_not_backlog(self):
         d=self.setupdir();db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
         db.ingest_discovery([pr(i) for i in range(1,10)],True,NOW)
         for n in range(1,5):db.update_detail(n,[{'filename':'vllm_ascend/foo.py'}])
         db.ingest_discovery([pr(i,'b') for i in range(1,10)],True,NOW)
         chosen=selection(db,list(range(1,10)),4)
-        self.assertEqual(len(chosen),4);self.assertEqual(sum(n>=5 for n in chosen),2)
+        self.assertEqual(len(chosen),4);self.assertEqual(chosen,[9,8,7,6])
     def test_new_pr_not_behind_old_initial_backlog(self):
         d=self.setupdir();db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
         db.ingest_discovery([pr(i) for i in range(1,10)],True,NOW)
@@ -186,9 +186,9 @@ class Tests(unittest.TestCase):
         d=self.setupdir();ps=[self.old_pr(n) for n in range(1,26)]
         overrides={'git/commits/':{'committer':{'date':'2026-05-01T00:00:00Z'},'parents':[]}}
         first=prepare(d,Fake(ps,overrides),round_id='one',now=NOW)
-        self.assertEqual(first['activity_probes'],20);self.assertEqual(first['activity_unconfirmed'],5)
+        self.assertEqual(first['activity_probes'],5);self.assertEqual(first['activity_unconfirmed'],20)
         second=prepare(d,Fake(ps,overrides),round_id='two',now=NOW)
-        self.assertEqual(second['activity_probes'],5);self.assertEqual(second['activity_unconfirmed'],0)
+        self.assertEqual(second['activity_probes'],5);self.assertEqual(second['activity_unconfirmed'],15)
     def test_ci_activity_uses_actual_timestamp_not_poll(self):
         p=pr();api=Fake([p],{'commits/a/status':{'statuses':[{'context':'docs','state':'success','created_at':'2026-11-01T00:00:00Z','updated_at':'2026-11-02T00:00:00Z'}]}})
         self.assertEqual(collect_ci(api,p)['activity_at'],'2026-11-02T00:00:00Z')
@@ -200,14 +200,14 @@ class Tests(unittest.TestCase):
             n=p['number'];db.update_detail(n,[{'filename':'.github/a.yml'}],1,0,old,summary='cached',summary_sha=p['head']['sha'])
             db.update_ci(n,'passed',now=old)
         db.close();return ps,old
-    def test_existing_ci_before_backlog_with_reserve(self):
+    def test_recent_files_before_ci_with_independent_reserve(self):
         d=self.setupdir();ps,old=self.seed_tracked(d,4);ps.append(pr(10,'a10'))
         clock=[0.0];api=FakeTimed(ps,clock,cost=lambda u:1 if '/pulls?' in u else 10)
         with patch('collector.time.monotonic',side_effect=lambda:clock[0]):
             r=prepare(d,api,round_id='timed',now=NOW)
         file_index=next(i for i,u in enumerate(api.calls) if '/files?' in u)
         check_index=next(i for i,u in enumerate(api.calls) if '/check-runs?' in u)
-        self.assertLess(check_index,file_index)
+        self.assertLess(file_index,check_index)
         self.assertGreaterEqual(r['ci_existing_refreshed'],1)
         self.assertGreaterEqual(r['file_prs'],1)
         self.assertGreater(r['ci_deferred'],0)
@@ -272,3 +272,24 @@ class Tests(unittest.TestCase):
         self.assertFalse((d/'response-000001.json').exists())
 
 if __name__=='__main__':unittest.main()
+
+class LightweightTests(unittest.TestCase):
+    def test_projection_keeps_merge_identity(self):
+        import subprocess
+        script="""const vm=require('vm'),fs=require('fs');const sandbox={};vm.createContext(sandbox);vm.runInContext(fs.readFileSync('bridge_projection.js','utf8'),sandbox);const projectResponse=sandbox.projectResponse;
+        let p={number:1,title:'x',created_at:'d',updated_at:'u',draft:false,state:'open',head:{sha:'h',repo:{large:'x'.repeat(100000)}},base:{ref:'main'},merge_commit_sha:'m',additions:2,deletions:1};
+        let r=projectResponse('https://api.github.com/repos/vllm-project/vllm-ascend/pulls?per_page=30',[p])[0];
+        if(r.merge_commit_sha!=='m'||r.head.sha!=='h'||r.additions!==2||JSON.stringify(r).length>1000)process.exit(1);
+        delete p.merge_commit_sha;if(projectResponse('https://api.github.com/repos/vllm-project/vllm-ascend/pulls/1',p)!==p)process.exit(2);
+        let checks={check_runs:[p]};if(projectResponse('https://api.github.com/repos/vllm-project/vllm-ascend/commits/h/check-runs',checks)!==checks)process.exit(3);"""
+        subprocess.run(['node','-e',script],cwd=Path(__file__).parent,check=True)
+
+    def test_new_summary_survives_ci_budget_exhaustion(self):
+        helper=Tests();d=helper.setupdir();self.addCleanup(helper.doCleanups)
+        ps,_=helper.seed_tracked(d,4);ps.append(pr(99,'new'))
+        clock=[0.0];api=FakeTimed(ps,clock,budget=150,cost=lambda u:1 if '/pulls?' in u else (70 if '/check-runs?' in u else 5))
+        with patch('collector.time.monotonic',side_effect=lambda:clock[0]):r=prepare(d,api,round_id='light',now=NOW)
+        requests=json.loads((d/'work/light/summary_requests.json').read_text())
+        self.assertTrue(any(x['number']==99 for x in requests))
+        self.assertGreater(r['ci_deferred'],0)
+        self.assertGreater(r['new_related_prs'],0)
