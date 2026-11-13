@@ -1,27 +1,33 @@
 # PR 关注列表
 
-最近刷新：2026-11-13 15:27:46（上海时间）
-当前关注的开放 PR：43
+最近刷新：2026-11-13 15:53:29（上海时间）
+当前关注的开放 PR：49
 
 优先关注近期新增或代码变更；CI 分批轮转，以下保留最近已知结果与检查时间。
 
 ## 最近更新（72h）
 
-- [11-13 15:22 · #21751 \[Feature\]\[Model\] Add Qwen PLE UVA host offload with DP memory sharing](#pr-21751)
+- [11-13 15:44 · #21469 \[Misc\] main2main: upgrade verified vLLM main from 1106 to 1112](#pr-21469)
+- [11-13 15:39 · #21481 \[CI\] memcache cases](#pr-21481)
+- [11-13 15:37 · #21751 \[Feature\]\[Model\] Add Qwen PLE UVA host offload with DP memory sharing](#pr-21751)
+- [11-13 15:37 · #21697 \[BugFix\]\[CI\] Add Qwen3.8 TP2 IPC coverage and preserve PLE sleep state](#pr-21697)
+- [11-13 15:37 · #20633 \[CI\] add test cases for Qwen3.6-35B-w8a8](#pr-20633)
+- [11-13 15:37 · #20575 \[CI\]\[Model\] Add combined GLM-5.3 P/PD/decode Weekly coverage](#pr-20575)
+- [11-13 15:37 · #20345 \[Performance\]\[Worker\] Reuse V2 attention metadata across cache groups and batch GDN state writes](#pr-20345)
 - [11-13 15:11 · #21587 \[Feature\] Fuse GatingTopK with EPLB expert mapping](#pr-21587)
 - [11-13 15:11 · #21385 \[releases/v0.30.0\]\[Test\]\[Feature\] Add Kimi-K3 W4A8 E256 accuracy test on A5](#pr-21385)
 - [11-13 15:11 · #21284 \[Test\] Add five-round Kimi-K3 Experts256 A5 nightly coverage](#pr-21284)
 - [11-13 15:09 · #21699 \[Feat\]\[Misc\] Add A5 UBX Dockerfiles for v0.32.0rc](#pr-21699)
-- [11-13 12:57 · #21469 \[Misc\] main2main: upgrade verified vLLM main from 1106 to 1112](#pr-21469)
-- [11-13 12:48 · #21481 \[CI\] memcache cases](#pr-21481)
+- [11-13 14:33 · #21674 \[CI\] run.sh](#pr-21674)
 - [11-13 12:00 · #21713 \[BugFix\] Rename static operator build option to --soc\_series](#pr-21713)
-- [11-13 11:36 · #21789 \[DevContainer\]\[Feature\] Add Dev Container environment settings for 310P/A2/A3/A5/CPU](#pr-21789)
-- [11-13 11:28 · #21778 \[CI\] Align weekly scheduling with nightly and extend multi-node timeouts](#pr-21778)
-- [11-13 10:24 · #21777 fix: pin torch==2.10.0+cpu to match torch-npu dependency](#pr-21777)
+- [11-13 12:00 · #21789 \[DevContainer\]\[Feature\] Add Dev Container environment settings for 310P/A2/A3/A5/CPU](#pr-21789)
+- [11-13 11:50 · #21778 \[CI\] Align weekly scheduling with nightly and extend multi-node timeouts](#pr-21778)
+- [11-13 10:34 · #21777 fix: pin torch==2.10.0+cpu to match torch-npu dependency](#pr-21777)
 - [11-13 09:49 · #21653 \[Feat\]\[Misc\] Add A5 UBX Dockerfiles for v0.30.0](#pr-21653)
 - [11-13 00:05 · #21746 test: cover Qwen3.6 Model Runner V2 with main-recorded goldens](#pr-21746)
 - [11-12 20:34 · #21685 \[CI\] add presmoke for CI](#pr-21685)
 - [11-12 19:54 · #21712 \[Doc\]\[Misc\] Document Ascend Docker Runtime container setup](#pr-21712)
+- [11-12 19:53 · #21310 \[Refactor\]\[Core\] Remove dynamic chunk size CPP feature, configuration, and documentation](#pr-21310)
 - [11-12 19:08 · #21541 \[Doc\] add doc quality review workflow for docs/source changes](#pr-21541)
 - [11-12 18:41 · #21714 \[Refactor\]\[MRV2\] Adopt EPLB policy and model-state hooks](#pr-21714)
 - [11-12 18:34 · #21705 \[Feature\] DSpark expert-pool routing for the expert-offload path](#pr-21705)
@@ -31,7 +37,7 @@
 - [11-12 15:54 · #21689 \[CI\] Isolate lint images by branch and add a lightweight tools image](#pr-21689)
 - [11-12 15:52 · #21594 \[Feature\]\[MoE\] Support anchor-union activation routing for DSpark and DFlash speculative decoding](#pr-21594)
 - [11-12 15:52 · #21680 \[Feature\]\[MoE\] Add opt-in DSpark expert-pool routing for expert offload](#pr-21680)
-- [11-12 14:45 · #20205 \[Feature\] Support draft model weight updates over HCCL](#pr-20205)
+- [11-12 14:50 · #20205 \[Feature\] Support draft model weight updates over HCCL](#pr-20205)
 - [11-12 12:42 · #21607 \[Test\]\[Upstream\]rerun failed test case](#pr-21607)
 - [11-12 12:04 · #21661 \[临时/勿合入\] 验证 karc 专用 4 卡档：a3-800i-fed-karc-4 两用例](#pr-21661)
 - [11-12 11:00 · #21623 \[Feature\]\[Engram\] Add local host VMM for shared A3 tables](#pr-21623)
@@ -59,7 +65,7 @@
 
 新增 CPU、310P、A2、A3、A5 的开发容器配置，统一源码挂载、编辑器格式化、依赖安装和 ccache 缓存；各硬件配置设置对应 CANN 镜像与编译环境。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +315 / -0 · **最后提交：** 11-13 11:36
+**CI：** 失败 · **改动：** +315 / -0 · **最后提交：** 11-13 11:36
 
 <a id="pr-21778"></a>
 
@@ -67,7 +73,7 @@
 
 为 nightly/weekly 工作流增加显式 drain\_pr\_runs 开关，避免普通手动调度误取消 PR 运行，并按测试分支隔离部分并发组。区分测试执行与整体 Job 超时，给排队和日志上传预留时间，同时更新贡献文档。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +381 / -45 · **最后提交：** 11-13 11:28
+**CI：** 通过 · **改动：** +381 / -45 · **最后提交：** 11-13 11:28
 
 <a id="pr-21777"></a>
 
@@ -75,15 +81,15 @@
 
 将构建配置与运行依赖中的 PyTorch 固定版本从 2.10.0 改为 2.10.0+cpu。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +6 / -2 · **最后提交：** 11-13 10:24
+**CI：** 失败（ci-gate） · **改动：** +6 / -2 · **最后提交：** 11-13 10:24
 
 <a id="pr-21751"></a>
 
 ### [#21751 · \[Feature\]\[Model\] Add Qwen PLE UVA host offload with DP memory sharing](https://github.com/vllm-project/vllm-ascend/pull/21751)
 
-相关文件已纳入关注，当前提交的变更摘要待补齐。
+在 CI 预计耗时清单中登记 PLE host lookup 单卡 Triton 测试，预计运行 30 秒。
 
-**CI：** 失败 · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（最近已知；待刷新；上次完整检查：11-13 15:11；旧提交） · **改动：** +877 / -32 · **最后提交：** 11-13 15:29
 
 <a id="pr-21746"></a>
 
@@ -157,6 +163,14 @@
 
 **CI：** 运行中 · **改动：** 待更新 · **最后提交：** 待更新
 
+<a id="pr-21697"></a>
+
+### [#21697 · \[BugFix\]\[CI\] Add Qwen3.8 TP2 IPC coverage and preserve PLE sleep state](https://github.com/vllm-project/vllm-ascend/pull/21697)
+
+在 CI 预计耗时清单中登记 Qwen3.8 双卡 RLHF IPC 权重传输测试，预计运行 180 秒。
+
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +293 / -4 · **最后提交：** 11-13 15:29
+
 <a id="pr-21689"></a>
 
 ### [#21689 · \[CI\] Isolate lint images by branch and add a lightweight tools image](https://github.com/vllm-project/vllm-ascend/pull/21689)
@@ -180,6 +194,14 @@
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
 **CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+
+<a id="pr-21674"></a>
+
+### [#21674 · \[CI\] run.sh](https://github.com/vllm-project/vllm-ascend/pull/21674)
+
+多节点测试启动脚本移除 Git 镜像探测与多端点回退，改为固定使用 ghfast 代理，并删除低速传输超时设置。退出钩子同时移除非零退出码的额外错误打印。
+
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +1 / -83 · **最后提交：** 11-13 14:00
 
 <a id="pr-21661"></a>
 
@@ -291,7 +313,7 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 14:33；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21500"></a>
 
@@ -299,7 +321,7 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 14:33；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21493"></a>
 
@@ -307,7 +329,7 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（最近已知；待刷新；上次完整检查：11-13 14:33；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败 · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21490"></a>
 
@@ -315,7 +337,7 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（最近已知；待刷新；上次完整检查：11-13 14:33；当前提交） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+**CI：** 失败 · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
 
 <a id="pr-21489"></a>
 
@@ -323,7 +345,7 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-13 14:33；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21481"></a>
 
@@ -331,7 +353,7 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-13 14:33；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21480"></a>
 
@@ -339,7 +361,7 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-13 14:33；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21479"></a>
 
@@ -347,15 +369,15 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 14:33；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21469"></a>
 
 ### [#21469 · \[Misc\] main2main: upgrade verified vLLM main from 1106 to 1112](https://github.com/vllm-project/vllm-ascend/pull/21469)
 
-相关文件已纳入关注，当前提交的变更摘要待补齐。
+将 vLLM main 验证提交标记更新为 3b95523ed904cf02a26b872f4a900ef17e6be8ad，并在 CI 耗时清单中登记 categorical sample bias 单卡测试，预计 120 秒。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 14:33；当前提交） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+**CI：** 运行中 · **改动：** +3480 / -420 · **最后提交：** 11-13 15:26 · **Draft**
 
 <a id="pr-21459"></a>
 
@@ -363,7 +385,7 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（最近已知；待刷新；上次完整检查：11-13 14:33；当前提交） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+**CI：** 失败 · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
 
 <a id="pr-21456"></a>
 
@@ -379,7 +401,15 @@
 
 为发布分支的 A5 nightly 工作流增加诊断文件收集和 AOP 二分日志上传，并接入 Kimi-K3 测试任务。通用单节点测试框架新增独立多轮执行及逐轮产物保留。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +592 / -4 · **最后提交：** 11-13 14:51
+**CI：** 失败（ci-gate） · **改动：** +592 / -4 · **最后提交：** 11-13 14:51
+
+<a id="pr-21310"></a>
+
+### [#21310 · \[Refactor\]\[Core\] Remove dynamic chunk size CPP feature, configuration, and documentation](https://github.com/vllm-project/vllm-ascend/pull/21310)
+
+从 CI 测试清单和耗时预估中移除 profiling chunk performance 用例，并移除文档导航中的动态分块流水线并行入口。
+
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +188 / -5388 · **最后提交：** 11-12 19:53
 
 <a id="pr-21284"></a>
 
@@ -387,7 +417,31 @@
 
 在 A5 nightly 配置中接入 Kimi-K3 任务，默认启用 AOP 并收集该任务的诊断产物，允许跳过缺失的可选日志。通用单节点测试入口新增多轮参数化执行及逐轮结果归档。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +354 / -5 · **最后提交：** 11-13 14:51
+**CI：** 失败（ci-gate） · **改动：** +354 / -5 · **最后提交：** 11-13 14:51
+
+<a id="pr-20633"></a>
+
+### [#20633 · \[CI\] add test cases for Qwen3.6-35B-w8a8](https://github.com/vllm-project/vllm-ascend/pull/20633)
+
+为 A3-560T nightly 配置新增 Qwen3.6-35B-A3B w8a8 FullAndPiecewise 测试项，使用 linux-aarch64-a3-800i-16 runner 及对应 Qwen 测试配置。
+
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +450 / -346 · **最后提交：** 11-13 15:17
+
+<a id="pr-20575"></a>
+
+### [#20575 · \[CI\]\[Model\] Add combined GLM-5.3 P/PD/decode Weekly coverage](https://github.com/vllm-project/vllm-ascend/pull/20575)
+
+为 Weekly-A3 增加 GLM-5.3 分拆及组合测试矩阵，并新增可由 PR 命令触发的 Weekly-A5 工作流与产物汇总。通用多节点配置解析同步支持替换基准参数中的集群地址占位符。
+
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +3577 / -5 · **最后提交：** 11-13 15:16 · **Draft**
+
+<a id="pr-20345"></a>
+
+### [#20345 · \[Performance\]\[Worker\] Reuse V2 attention metadata across cache groups and batch GDN state writes](https://github.com/vllm-project/vllm-ascend/pull/20345)
+
+为 cached GDN decode 和 GDN metadata reuse 两项端到端测试新增各 600 秒的 CI 调度预估时长。
+
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +2978 / -171 · **最后提交：** 11-13 15:32
 
 <a id="pr-20205"></a>
 
@@ -395,4 +449,4 @@
 
 在 CI 的预计耗时清单中登记双卡 RLHF draft HCCL 权重传输测试，预计运行 510 秒。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +739 / -52 · **最后提交：** 11-12 14:45
+**CI：** 失败（ci-gate） · **改动：** +739 / -52 · **最后提交：** 11-12 14:45
