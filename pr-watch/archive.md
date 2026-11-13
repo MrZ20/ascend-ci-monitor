@@ -1,10 +1,26 @@
 # PR 归档
 
-最近刷新：2026-11-13 18:53:25（上海时间）
+最近刷新：2026-11-13 19:49:56（上海时间）
 
 仅记录开始跟踪后确认合入或关闭的 PR，不追溯全部历史。
 
 <!-- pr-watch-pruned: [21681] -->
+
+<a id="pr-21223"></a>
+
+### [#21223 · \[CI\] Add Weekly test cases](https://github.com/vllm-project/vllm-ascend/pull/21223)
+
+为 A3 weekly 配置增加 MiniMax M3、GLM-5.3、DeepSeek-V4.1-Flash 与 GLM-5.3-Flash 的 1M 上下文 PD 测试项，分别配置对应模型 YAML 和规模。
+
+**CI：** 未知 · **改动：** +1049 / -9 · **最后提交：** 11-13 18:33 · **已合入：** 2026-11-13 19:01:26
+
+<a id="pr-21778"></a>
+
+### [#21778 · \[CI\] Align weekly scheduling with nightly and extend multi-node timeouts](https://github.com/vllm-project/vllm-ascend/pull/21778)
+
+为 nightly/weekly 工作流增加显式 drain\_pr\_runs 开关，避免普通手动调度误取消 PR 运行，并按测试分支隔离部分并发组。区分测试执行与整体 Job 超时，给排队和日志上传预留时间，同时更新贡献文档。
+
+**CI：** 通过 · **改动：** +381 / -45 · **最后提交：** 11-13 11:28 · **已合入：** 2026-11-13 18:01:56
 
 <a id="pr-21657"></a>
 
