@@ -1,6 +1,6 @@
 # PR 关注列表
 
-最近刷新：2026-11-13 12:48:12（上海时间）
+最近刷新：2026-11-13 13:49:49（上海时间）
 当前关注的开放 PR：37
 范围：最近 30 天有创建、提交、CI、Draft 或目标分支变化证据的开放 PR；普通评论不算活动。
 长期无元数据更新的旧 PR 未逐个追查仅 CI 重跑的活动，本页不代表这类活动已全覆盖。
@@ -13,32 +13,32 @@ CI 待刷新：15 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 本轮覆盖缺口：2 项采集未完成；保留最近已知状态及检查时间，不将延期当作成功检查。
 
-恢复说明：本地缓存因执行环境中断丢失，本轮从远端恢复 37 个既有关注编号；旧 SHA、精确检查时间与文件缓存未恢复。下方历史快照保留原摘要及状态，不冒充当前提交结果。已完成 22 项当前 CI，其余保留历史结果待刷新；未启动历史全量补采。
+恢复说明：此前本地缓存因执行环境中断丢失，已从远端恢复 37 个既有关注编号；旧 SHA、精确检查时间与文件缓存未恢复。下方历史快照保留原摘要及状态，不冒充当前提交结果。本轮完成 22 项 CI，其余保留最近已知结果待刷新；未启动历史全量补采。
 
 ## 最近更新（72h）
 
-- [11-13 12:33 · #21481 \[CI\] memcache cases](#pr-21481)
-- [11-13 12:06 · #21469 \[Misc\] main2main: upgrade verified vLLM main from 1106 to 1112](#pr-21469)
-- [11-12 22:38 · #21751 \[Feature\]\[Model\] Add Qwen PLE UVA host offload with DP memory sharing](#pr-21751)
-- [11-12 22:15 · #21746 test: cover Qwen3.6 Model Runner V2 with main-recorded goldens](#pr-21746)
+- [11-13 13:12 · #21751 \[Feature\]\[Model\] Add Qwen PLE UVA host offload with DP memory sharing](#pr-21751)
+- [11-13 12:57 · #21469 \[Misc\] main2main: upgrade verified vLLM main from 1106 to 1112](#pr-21469)
+- [11-13 12:48 · #21481 \[CI\] memcache cases](#pr-21481)
+- [11-13 12:14 · #21699 \[Feat\]\[Misc\] Add A5 UBX Dockerfiles for v0.32.0rc](#pr-21699)
+- [11-13 12:00 · #21713 \[BugFix\] Rename static operator build option to --soc\_series](#pr-21713)
+- [11-13 09:49 · #21653 \[Feat\]\[Misc\] Add A5 UBX Dockerfiles for v0.30.0](#pr-21653)
+- [11-13 00:05 · #21746 test: cover Qwen3.6 Model Runner V2 with main-recorded goldens](#pr-21746)
+- [11-12 20:34 · #21685 \[CI\] add presmoke for CI](#pr-21685)
 - [11-12 20:02 · #21587 \[Feature\] Fuse GatingTopK with EPLB expert mapping](#pr-21587)
+- [11-12 19:54 · #21712 \[Doc\]\[Misc\] Document Ascend Docker Runtime container setup](#pr-21712)
 - [11-12 19:08 · #21541 \[Doc\] add doc quality review workflow for docs/source changes](#pr-21541)
-- [11-12 18:12 · #21717 \[CI\] Restore A5 multi-node nightly test cases](#pr-21717)
-- [11-12 18:08 · #21716 \[临时/勿合入\] ci: route Nightly-A2 cases to offline-cluster runner labels](#pr-21716)
-- [11-12 17:54 · #21714 \[Refactor\]\[MRV2\] Adopt EPLB policy and model-state hooks](#pr-21714)
-- [11-12 17:53 · #21713 \[BugFix\] Rename static operator build option to --soc\_series](#pr-21713)
-- [11-12 17:53 · #21712 \[Doc\]\[Misc\] Document Ascend Docker Runtime container setup](#pr-21712)
-- [11-12 17:06 · #21705 \[Feature\] DSpark expert-pool routing for the expert-offload path](#pr-21705)
-- [11-12 16:27 · #21701 \[临时/勿合入\] 验证 karc 专用 4 卡档：a3-800i-fed-karc-4 两用例](#pr-21701)
-- [11-12 16:12 · #21699 \[Feat\]\[Misc\] Add A5 UBX Dockerfiles for v0.32.0rc](#pr-21699)
+- [11-12 18:41 · #21714 \[Refactor\]\[MRV2\] Adopt EPLB policy and model-state hooks](#pr-21714)
+- [11-12 18:34 · #21705 \[Feature\] DSpark expert-pool routing for the expert-offload path](#pr-21705)
+- [11-12 18:31 · #21717 \[CI\] Restore A5 multi-node nightly test cases](#pr-21717)
+- [11-12 18:10 · #21716 \[临时/勿合入\] ci: route Nightly-A2 cases to offline-cluster runner labels](#pr-21716)
+- [11-12 17:00 · #21701 \[临时/勿合入\] 验证 karc 专用 4 卡档：a3-800i-fed-karc-4 两用例](#pr-21701)
+- [11-12 15:54 · #21689 \[CI\] Isolate lint images by branch and add a lightweight tools image](#pr-21689)
 - [11-12 15:52 · #21594 \[Feature\]\[MoE\] Support anchor-union activation routing for DSpark and DFlash speculative decoding](#pr-21594)
-- [11-12 15:15 · #21689 \[CI\] Isolate lint images by branch and add a lightweight tools image](#pr-21689)
-- [11-12 14:58 · #21685 \[CI\] add presmoke for CI](#pr-21685)
-- [11-12 14:40 · #21680 \[Feature\]\[MoE\] Add opt-in DSpark expert-pool routing for expert offload](#pr-21680)
+- [11-12 15:52 · #21680 \[Feature\]\[MoE\] Add opt-in DSpark expert-pool routing for expert offload](#pr-21680)
 - [11-12 12:42 · #21607 \[Test\]\[Upstream\]rerun failed test case](#pr-21607)
-- [11-12 11:30 · #21661 \[临时/勿合入\] 验证 karc 专用 4 卡档：a3-800i-fed-karc-4 两用例](#pr-21661)
+- [11-12 12:04 · #21661 \[临时/勿合入\] 验证 karc 专用 4 卡档：a3-800i-fed-karc-4 两用例](#pr-21661)
 - [11-12 11:00 · #21623 \[Feature\]\[Engram\] Add local host VMM for shared A3 tables](#pr-21623)
-- [11-12 10:53 · #21653 \[Feat\]\[Misc\] Add A5 UBX Dockerfiles for v0.30.0](#pr-21653)
 - [11-12 10:47 · #21490 \[临时/勿合入\] 全量 A2/A3 业务选测跑 karc fed runner（对齐 #20716）](#pr-21490)
 - [11-12 10:13 · #21643 \[Feature\]\[EC Connector\] Support encoder cache tiering offload on Ascend](#pr-21643)
 - [11-12 09:10 · #21638 \[Feature\]\[Qwen\] Share PLE tables across Ascend services](#pr-21638)
@@ -63,7 +63,7 @@ CI 待刷新：15 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败 · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -80,7 +80,7 @@ CI 待刷新：15 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -97,7 +97,7 @@ CI 待刷新：15 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -114,7 +114,7 @@ CI 待刷新：15 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -131,7 +131,7 @@ CI 待刷新：15 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -148,7 +148,7 @@ CI 待刷新：15 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -165,7 +165,7 @@ CI 待刷新：15 个 PR 尚未取得本轮所需的完整检查结果；上次�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -182,7 +182,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -199,7 +199,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -216,7 +216,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -233,7 +233,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -250,7 +250,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -267,7 +267,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -284,7 +284,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败 · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -301,7 +301,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -318,7 +318,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -335,7 +335,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -352,7 +352,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -369,7 +369,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -386,7 +386,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -403,7 +403,7 @@ Getting Started 补充 Ascend Docker Runtime 安装验证、设备选择及额�
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -420,7 +420,7 @@ CI runner 映射新增 test\_gating\_map\_npu.py，默认分配 a3-2，明确该
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -437,7 +437,7 @@ CI runner 映射新增 test\_gating\_map\_npu.py，默认分配 a3-2，明确该
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -454,7 +454,7 @@ CI runner 映射新增 test\_gating\_map\_npu.py，默认分配 a3-2，明确该
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -471,7 +471,7 @@ CI runner 映射新增 test\_gating\_map\_npu.py，默认分配 a3-2，明确该
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败 · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -488,7 +488,7 @@ CI runner 映射新增 test\_gating\_map\_npu.py，默认分配 a3-2，明确该
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -505,7 +505,7 @@ CI runner 映射新增 test\_gating\_map\_npu.py，默认分配 a3-2，明确该
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -522,7 +522,7 @@ CI runner 映射新增 test\_gating\_map\_npu.py，默认分配 a3-2，明确该
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败（ci-gate） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -539,7 +539,7 @@ CI runner 映射新增 test\_gating\_map\_npu.py，默认分配 a3-2，明确该
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败 · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -556,7 +556,7 @@ CI runner 映射新增 test\_gating\_map\_npu.py，默认分配 a3-2，明确该
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 失败 · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+**CI：** 失败（最近已知；待刷新；上次完整检查：11-13 12:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
@@ -590,7 +590,7 @@ CI runner 映射新增 test\_gating\_map\_npu.py，默认分配 a3-2，明确该
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。
 
-**CI：** 运行中 · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 通过 · **改动：** 待更新 · **最后提交：** 待更新
 
 <details>
 <summary>环境恢复前的已知结果（历史快照，非当前提交验证）</summary>
