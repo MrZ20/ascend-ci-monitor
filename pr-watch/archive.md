@@ -1,10 +1,18 @@
 # PR 归档
 
-最近刷新：2026-11-13 19:49:56（上海时间）
+最近刷新：2026-11-13 20:49:03（上海时间）
 
 仅记录开始跟踪后确认合入或关闭的 PR，不追溯全部历史。
 
 <!-- pr-watch-pruned: [21681] -->
+
+<a id="pr-20612"></a>
+
+### [#20612 · \[Feature\]\[Engram\] Share A2/A5 host tables across P/D instances via RDMA](https://github.com/vllm-project/vllm-ascend/pull/20612)
+
+构建配置新增可选 engram\_hixl 共享库：仅在检测到 HIXL 头文件和 cann\_hixl 库后构建、链接并安装，同时设为主扩展依赖。
+
+**CI：** 运行中 · **改动：** +2407 / -22 · **最后提交：** 11-12 20:00 · **已合入：** 2026-11-13 20:15:01
 
 <a id="pr-21223"></a>
 
