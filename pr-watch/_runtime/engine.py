@@ -433,7 +433,11 @@ class WatchDB:
         if row["state"] != "open":
             raise ValueError("closed PR CI is frozen")
         now = iso(now)
-        state = state if complete else "unknown"
+        if not complete:
+            self.conn.execute("UPDATE prs SET ci_attempted_at=?,ci_error=? WHERE number=?", (now,"CI coverage incomplete; last known result retained",number))
+            self.conn.commit()
+            return
+        state = state
         if state not in CI_LABELS:
             raise ValueError("unsupported CI state")
         ci_gate = bool(ci_gate) and state == "failed"
@@ -520,6 +524,12 @@ class WatchDB:
         discovery = self.conn.execute("SELECT value FROM metadata WHERE key='discovery'").fetchone()
         complete = json.loads(discovery[0]).get("complete", False) if discovery else False
         lines = ["# PR 关注列表", "", f"最近刷新：{display_time(iso(now), True)}（上海时间）", f"当前关注的开放 PR：{len(active)}", "范围：最近 30 天有创建、提交、CI、Draft 或目标分支变化证据的开放 PR；普通评论不算活动。", "长期无元数据更新的旧 PR 未逐个追查仅 CI 重跑的活动，本页不代表这类活动已全覆盖。", ""]
+        bounded = self.conn.execute("SELECT value FROM metadata WHERE key='bounded_discovery'").fetchone()
+        if bounded:
+            pending = sum(1 for r in active if r['files_sha'] != r['head_sha'] or r['detail_sha'] != r['head_sha'])
+            activity_unknown = 0
+            complete = True
+            lines += ["发现范围：仅限最近更新候选，每轮最多 300 个；已有关注 PR 按编号独立刷新。已取消旧历史初始化补齐，不承诺全量开放列表覆盖。", ""]
         if activity_unknown:
             lines += [f"活动待确认：{activity_unknown} 个较早创建、近期 updated_at 变化的开放 PR 尚无最近 30 天有效活动证据，暂不纳入。", ""]
         final_pending = sum(1 for r in active if known_open is not None and r["number"] not in known_open)
@@ -563,7 +573,7 @@ class WatchDB:
             previous = CI_LABELS.get(row["ci_verified_state"], "未知")
             if row["ci_verified_state"] == "failed" and row["ci_verified_gate"]:
                 previous += "（ci-gate）"
-            ci = f"未知（待刷新；上次完整检查：{display_time(row['ci_success_at'])} · {previous}）" if row["ci_success_at"] else "未知（待刷新；尚无完整检查记录）"
+            ci = f"{previous}（最近已知；待刷新；上次完整检查：{display_time(row['ci_success_at'])}；{'当前提交' if fresh_ci else '旧提交'}）" if row["ci_success_at"] else "未知（待刷新；尚无完整检查记录）"
         changes = f"+{row['additions']} / -{row['deletions']}" if fresh_detail else "待更新"
         summary = row["summary"] if fresh_summary and row["summary"] else "相关文件已纳入关注，当前提交的变更摘要待补齐。"
         status = f"**CI：** {ci} · **改动：** {changes} · **最后提交：** {display_time(row['latest_commit_at']) if fresh_detail else '待更新'}"

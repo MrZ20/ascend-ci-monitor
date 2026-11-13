@@ -297,6 +297,11 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
             before=api.metrics['rest_requests'];budget_failure=False
             try:
                 row=db.row(n);pr=index.get(n) or api.get(f'{ROOT}/pulls/{n}')
+                if pr.get('state')=='closed' and pr.get('closed_at'):
+                    db.confirm_closed(n,'merged' if pr.get('merged_at') else 'closed',pr['closed_at'],pr.get('merged_at'));result['closed']+=1
+                    continue
+                db.ingest_discovery([pr],complete=False,now=now);index[n]=pr;row=db.row(n)
+                result['tracked_metadata_checked']+=1
                 if pr['head']['sha']!=row['head_sha'] or pr['base']['ref']!=row['base_ref']:
                     raise CoverageError('head/base changed during CI collection')
                 ci=collect_ci(api,pr)
@@ -321,30 +326,51 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
             if budget_failure:
                 defer(kind+' CI',numbers[i:],ci=True);break
     try:
-        try:
-            prs=pages(api,'pulls?state=open&sort=created&direction=desc')
-            if len({p['number'] for p in prs})!=len(prs):raise CoverageError('duplicate PR during discovery pagination')
-            result['discovery_complete']=True
-        except CoverageError as e:
-            gap('open PR discovery',e);prs=[]
-        discovery=db.ingest_discovery(prs,complete=result['discovery_complete'],now=now)
-        index={p['number']:p for p in prs}
-        result['open_prs']=len(prs) if result['discovery_complete'] else None
-        if result['discovery_complete']:
-            scope=set(db.scope_active(now))
-            existing_due=[n for n in db.ci_due(now) if n in scope and n in index]
-            result['ci_due']=len(existing_due);result['ci_due_existing']=len(existing_due)
-            # Protect a small, bounded tail for recent-scope initialization. A short
-            # remaining round reserves only 35%, avoiding a zero-length CI phase.
-            round_end=getattr(api,'deadline',float('inf'))
-            remaining=max(0,round_end-time.monotonic())
-            total=getattr(api,'budget_seconds',720)
-            reserve=min(120,max(90,total*.20),remaining*.35)
-            result['initialization_reserve_seconds']=round(reserve,3)
-            existing_end=round_end-reserve if round_end!=float('inf') else None
-            with phase_limit(api,existing_end):
-                checked_ci(existing_due,'existing')
-
+        # Existing tracked PRs are independent of candidate discovery.
+        tracked=[r[0] for r in db.conn.execute("SELECT number FROM prs WHERE state='open' AND matched=1")]
+        result['tracked_metadata_checked']=0
+        existing_due=[n for n in db.ci_due(now) if n in tracked]
+        result['ci_due']=len(existing_due);result['ci_due_existing']=len(existing_due)
+        round_end=getattr(api,'deadline',float('inf'))
+        remaining=max(0,round_end-time.monotonic())
+        reserve=min(120,remaining*.20)
+        result['initialization_reserve_seconds']=round(reserve,3)
+        with phase_limit(api,round_end-reserve if round_end!=float('inf') else None):
+            checked_ci(existing_due,'existing')
+        for n in tracked:
+            if n in existing_due:continue
+            if budget_left(api)<=0:break
+            try:
+                pr=api.get(f'{ROOT}/pulls/{n}')
+                if pr.get('state')=='closed' and pr.get('closed_at'):
+                    db.confirm_closed(n,'merged' if pr.get('merged_at') else 'closed',pr['closed_at'],pr.get('merged_at'));result['closed']+=1
+                elif pr.get('state')=='open':
+                    db.ingest_discovery([pr],complete=False,now=now);index[n]=pr
+                    if n in db.ci_due(now):checked_ci([n],'existing')
+                result['tracked_metadata_checked']+=1
+            except (CoverageError,KeyError,ValueError) as e:gap(f'PR {n} metadata',e)
+        # Bounded updated-order candidates; no full open snapshot, no historical backlog.
+        candidate_ids=set();cutoff=instant(now)-timedelta(days=30)
+        for page in range(1,4):
+            if budget_left(api)<=0:break
+            try:
+                values=api.get(f'{ROOT}/pulls?state=open&sort=updated&direction=desc&per_page=100&page={page}')
+                if not isinstance(values,list):raise CoverageError('invalid candidate list')
+                recent=[p for p in values if instant(p['updated_at'])>=cutoff]
+                for pr in recent:
+                    if pr['number'] not in candidate_ids:
+                        candidate_ids.add(pr['number']);prs.append(pr)
+                if len(values)<100 or len(recent)<len(values):
+                    result['discovery_complete']=True;break
+            except (CoverageError,KeyError,ValueError) as e:
+                gap('recent PR candidate discovery',e);break
+        discovery=db.ingest_discovery(prs,complete=False,now=now)
+        index.update({p['number']:p for p in prs})
+        db._meta('bounded_discovery',True);db.conn.commit()
+        result['candidate_prs']=len(prs);result['open_prs']=None
+        if not result['discovery_complete']:
+            result['coverage_limit']='Bounded recent candidate discovery (maximum 300); no complete open snapshot or forced history initialization.'
+        if budget_left(api)>0:
             # Backlog is bounded even if all old tracked CI finishes early. Unused
             # round time can then check newly matched PRs rather than disappear.
             backlog_end=min(round_end,time.monotonic()+reserve)
@@ -361,7 +387,7 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
 
                 # Probes cannot eat the whole initialization tail: leave most of it
                 # for confirmed recent PR file screening and summary recovery.
-                probes=activity_probe_candidates(db,now,limit=20)
+                probes=[n for n in activity_probe_candidates(db,now,limit=20) if n in candidate_ids]
                 probe_end=min(backlog_end,time.monotonic()+max(0,budget_left(api))*.35)
                 with phase_limit(api,probe_end):
                     for i,n in enumerate(probes):
@@ -378,7 +404,8 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
                         finally:
                             if api.metrics['rest_requests']>before:result['activity_probes']+=1
                 scope=set(db.scope_active(now))
-                needs=[n for n in scope if n in index and (db.row(n)['changed_files'] is None or db.row(n)['files_sha']!=db.row(n)['head_sha'] or db.row(n)['files_base']!=db.row(n)['base_ref'])]
+                needs=[n for n in scope if n in candidate_ids or n in tracked]
+                needs=[n for n in needs if n in index and (db.row(n)['changed_files'] is None or db.row(n)['files_sha']!=db.row(n)['head_sha'] or db.row(n)['files_base']!=db.row(n)['base_ref'])]
                 selected=selection(db,needs,batch_limit,now);result['init_selected']=len(selected)
                 for i,n in enumerate(selected):
                     if budget_left(api)<=0:defer('files/detail',selected[i:]);break
@@ -448,12 +475,12 @@ def prepare(directory,api,batch_limit=60,round_id=None,now=None):
         result['summary_requests']=len(requests);result['ci_deferred']=len(deferred_ci)
         scoped=[db.row(n) for n in db.scope_active(now)]
         result['scope_active_open']=len(scoped);result['matched_open']=sum(bool(r['matched']) for r in scoped)
-        result['pending_files']=sum(r['changed_files'] is None or r['files_sha']!=r['head_sha'] or r['files_base']!=r['base_ref'] for r in scoped)
+        result['pending_files']=sum(r['changed_files'] is None or r['files_sha']!=r['head_sha'] or r['files_base']!=r['base_ref'] for r in scoped if r['number'] in candidate_ids or r['number'] in tracked)
         cutoff=instant(now)-timedelta(days=30);active_numbers={r['number'] for r in scoped};known_open=db._last_complete_open_ids()
         result['activity_unconfirmed']=sum((known_open is None or r[0] in known_open) and instant(db.row(r[0])['updated_at'])>=cutoff and r[0] not in active_numbers and db.row(r[0]).get('activity_probe_result')!='inactive' for r in db.conn.execute("SELECT number FROM prs WHERE state='open'"))
-        result['coverage_limit']='Scope is verified recent activity only; CI-only reruns on old PRs without recent metadata updates are not exhaustively searched.'
+        result['coverage_limit']='Existing tracked PRs refreshed independently; recent updated candidates capped at 300; no full-open snapshot or forced historical backlog. Old CI-only reruns may be missed.'
         result['metrics']=dict(api.metrics);result['metrics']['elapsed_seconds']=round(time.monotonic()-start,3)
-        result['finished_at']=iso();result['status']='partial' if result['gaps'] or result['pending_files'] or result['activity_unconfirmed'] else 'collected'
+        result['finished_at']=iso();result['status']='partial' if result['gaps'] else 'collected'
         db._meta('prepared_round',round_id);db.conn.commit()
         atomic_json(work/'summary_requests.json',requests);atomic_json(work/'result.json',result);atomic_json(directory/'latest-round.json',result)
         return result
@@ -483,7 +510,7 @@ def finish(directory,round_id,summaries,now=None):
         active,archive=db.render(now)
         if result['gaps']:
             # Brief concrete coverage note; no raw exceptions or sensitive API payloads.
-            active=active.replace('## 最近更新（72h）',f'本轮覆盖缺口：{len(result["gaps"])} 项采集未完成；受影响状态显示未知或等待补齐。\n\n## 最近更新（72h）',1)
+            active=active.replace('## 最近更新（72h）',f'本轮覆盖缺口：{len(result["gaps"])} 项采集未完成；保留最近已知状态及检查时间，不将延期当作成功检查。\n\n## 最近更新（72h）',1)
         (directory/'active.md').write_text(active);(directory/'archive.md').write_text(archive)
         result['metrics']['ai_summaries_applied']=applied;result['rendered_at']=iso(now)
         result['summaries_remaining']=len(requests)-applied

@@ -67,6 +67,27 @@ class Tests(unittest.TestCase):
         self.assertFalse((d/'work/one/summary_requests.json').exists())
         db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
         self.assertNotIn('patch',db.row(1)['changed_files'][0])
+    def test_discovery_failure_does_not_block_existing_ci(self):
+        d=self.setupdir();ps,old=self.seed_tracked(d,2)
+        api=Fake(ps,{'pulls?':CoverageError('503 discovery unavailable')})
+        result=prepare(d,api,batch_limit=0,round_id='discovery-fault',now=NOW)
+        self.assertEqual(result['ci_existing_refreshed'],2)
+        self.assertFalse(result['discovery_complete'])
+        self.assertLess(next(i for i,u in enumerate(api.calls) if '/check-runs?' in u),next(i for i,u in enumerate(api.calls) if '/pulls?' in u))
+        db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
+        self.assertEqual(db.row(1)['ci_success_at'],NOW)
+    def test_bounded_candidates_deduplicate_and_cancel_old_backlog(self):
+        d=self.setupdir();ps,old=self.seed_tracked(d,1)
+        db=WatchDB(d/'pr_watch.db',d/'exclude.yaml')
+        db.ingest_discovery([pr(n) for n in range(2,1003)],False,NOW);db.close()
+        api=Fake([pr(2000)]*100)
+        api.overrides['pulls/1']=ps[0]
+        result=prepare(d,api,batch_limit=0,round_id='bounded',now=NOW)
+        self.assertEqual(sum('/pulls?' in u for u in api.calls),3)
+        self.assertEqual(result['candidate_prs'],1)
+        self.assertEqual(result['pending_files'],1)
+        db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
+        self.assertNotIn('1001',db.render(NOW)[0])
     def test_summary_sha_reject(self):
         d=self.setupdir();prepare(d,Fake([pr()]),round_id='one',now=NOW)
         with self.assertRaises(CoverageError):finish(d,'one',{'1':{'head_sha':'wrong','summary':'x'}},now=NOW)
@@ -78,7 +99,7 @@ class Tests(unittest.TestCase):
         self.assertFalse(any('/files?' in u for u in api.calls))
     def test_failed_discovery_no_archive(self):
         d=self.setupdir();prepare(d,Fake([pr()]),round_id='one',now=NOW)
-        r=prepare(d,Fake([],{ 'pulls?':CoverageError('503') }),round_id='two',now=NOW)
+        r=prepare(d,Fake([pr()],{ 'pulls?':CoverageError('503') }),round_id='two',now=NOW)
         self.assertFalse(r['discovery_complete']);self.assertEqual(r['closed'],0)
         db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
         self.assertEqual(db.row(1)['state'],'open')
@@ -188,7 +209,7 @@ class Tests(unittest.TestCase):
         check_index=next(i for i,u in enumerate(api.calls) if '/check-runs?' in u)
         self.assertLess(check_index,file_index)
         self.assertGreaterEqual(r['ci_existing_refreshed'],1)
-        self.assertGreaterEqual(r['init_processed'],1)
+        self.assertGreaterEqual(r['file_prs'],1)
         self.assertGreater(r['ci_deferred'],0)
         db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
         # The fourth old PR had no request and must retain its successful/attempt clocks.
@@ -200,18 +221,19 @@ class Tests(unittest.TestCase):
         api=FakeTimed(ps,clock,budget=100,cost=100)
         with patch('collector.time.monotonic',side_effect=lambda:clock[0]):
             r=prepare(d,api,round_id='zero',now=NOW)
-        self.assertEqual(r['ci_existing_attempted'],0);self.assertEqual(r['ci_deferred'],2)
-        self.assertEqual(len(api.calls),1)
+        self.assertEqual(r['ci_existing_attempted'],1);self.assertEqual(r['ci_deferred'],2)
+        self.assertEqual(len(api.calls),2)
         db=WatchDB(d/'pr_watch.db',d/'exclude.yaml');self.addCleanup(db.close)
         for n in (1,2):
-            self.assertEqual(db.row(n)['ci_success_at'],old);self.assertEqual(db.row(n)['ci_attempted_at'],old)
+            self.assertEqual(db.row(n)['ci_success_at'],old)
+            self.assertEqual(db.row(n)['ci_attempted_at'],NOW if n==1 else old)
     def test_failed_ci_attempt_rotates_next_round(self):
         d=self.setupdir();ps,old=self.seed_tracked(d,3)
-        clock=[0.0];api=FakeTimed(ps,clock,cost=lambda u:1 if '/pulls?' in u else 100)
+        clock=[0.0];api=FakeTimed(ps,clock,cost=lambda u:1 if '/pulls' in u else 100)
         with patch('collector.time.monotonic',side_effect=lambda:clock[0]):
             one=prepare(d,api,batch_limit=0,round_id='one',now=NOW)
         self.assertEqual(one['ci_existing_attempted'],1);self.assertEqual(one['ci_existing_refreshed'],0)
-        clock=[0.0];second=FakeTimed(ps,clock,cost=lambda u:1 if '/pulls?' in u else 100)
+        clock=[0.0];second=FakeTimed(ps,clock,cost=lambda u:1 if '/pulls' in u else 100)
         with patch('collector.time.monotonic',side_effect=lambda:clock[0]):
             two=prepare(d,second,batch_limit=0,round_id='two',now='2026-11-12T10:00:00Z')
         first_check=next(u for u in api.calls if '/check-runs?' in u)
@@ -223,7 +245,7 @@ class Tests(unittest.TestCase):
         with patch('collector.time.monotonic',side_effect=lambda:clock[0]):
             r=prepare(d,api,round_id='probe',now=NOW)
         self.assertTrue(any(x['phase']=='activity probes' for x in r['deferrals']))
-        self.assertGreaterEqual(r['init_processed'],1)
+        self.assertGreaterEqual(r['file_prs'],1)
     def test_lock_nonblocking(self):
         d=self.setupdir()
         with round_lock(d):
