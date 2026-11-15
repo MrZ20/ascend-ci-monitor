@@ -1,21 +1,23 @@
 # PR 关注列表
 
-最近刷新：2026-11-15 18:00:21（上海时间）
-当前关注的开放 PR：95
+最近刷新：2026-11-15 18:57:12（上海时间）
+当前关注的开放 PR：97
 
 优先关注近期新增或代码变更；CI 分批轮转，以下保留最近已知结果与检查时间。
 
 ## 最近更新（72h）
 
-- [11-15 17:41 · #20757 \[Test\] Add KV pool hit watch to A3 PR e2e cases](#pr-20757)
+- [11-15 18:35 · #21903 \[Refactor\]\[MRV2\] Reuse unified KV cache allocation for Kimi K3](#pr-21903)
+- [11-15 18:35 · #21886 \[CI\]\[Feature\] Publish failed Daily cases incrementally to one Issue](#pr-21886)
+- [11-15 18:35 · #21005 \[Misc\] main2main 1106](#pr-21005)
+- [11-15 18:33 · #21889 \[BugFix\] Allow non-root users to load operator libraries](#pr-21889)
+- [11-15 17:52 · #20757 \[Test\] Add KV pool hit watch to A3 PR e2e cases](#pr-20757)
 - [11-15 17:37 · #21549 \[Feature\] Add experimental Kimi KDA RecoverSSM support](#pr-21549)
-- [11-15 16:48 · #21005 \[Misc\] main2main 1106](#pr-21005)
-- [11-15 16:42 · #17833 \[Feature\]\[Worker\] Add MRV2 KV Trace](#pr-17833)
-- [11-15 16:39 · #21906 \[BugFix\] Complete V2 thinking budget validation and acceptance coverage](#pr-21906)
+- [11-15 17:28 · #21906 \[BugFix\] Complete V2 thinking budget validation and acceptance coverage](#pr-21906)
+- [11-15 16:57 · #17833 \[Feature\]\[Worker\] Add MRV2 KV Trace](#pr-17833)
 - [11-15 16:39 · #21607 \[Test\]\[Upstream\]rerun failed test case](#pr-21607)
 - [11-15 16:39 · #21190 \[Performance\]\[Worker\] Reuse attention metadata and keep DFlash2 lengths on device](#pr-21190)
 - [11-15 16:39 · #20205 \[Feature\] Support draft model weight updates over HCCL](#pr-20205)
-- [11-15 15:32 · #21903 \[Refactor\]\[MRV2\] Reuse unified KV cache allocation for Kimi K3](#pr-21903)
 - [11-15 15:32 · #20345 \[Performance\]\[Worker\] Reuse V2 attention metadata across cache groups and batch GDN state writes](#pr-20345)
 - [11-15 14:54 · #21469 \[Misc\] main2main: upgrade verified vLLM main from 1106 to 1112](#pr-21469)
 - [11-15 14:47 · #21871 \[Doc\] Use --backend in the serving benchmark example](#pr-21871)
@@ -31,10 +33,8 @@
 - [11-15 02:26 · #21888 \[BugFix\] Allow non-root users to load operator libraries](#pr-21888)
 - [11-14 23:59 · #21892 \[Feature\] Compose HiSparse with PCP on Ascend](#pr-21892)
 - [11-14 23:34 · #20138 \[Feature\]\[RuntimeGuard\] Add rare\_chars detector with async pair collect](#pr-20138)
-- [11-14 23:11 · #21889 \[BugFix\] Allow non-root users to load operator libraries](#pr-21889)
 - [11-14 20:39 · #21890 \[Doc\] Fix stale file paths in docs](#pr-21890)
 - [11-14 19:46 · #21885 \[Feature\] Integrate A3 W4A8 SiTU through the shared grouped matmul operator](#pr-21885)
-- [11-14 19:24 · #21886 \[CI\]\[Feature\] Publish failed Daily cases incrementally to one Issue](#pr-21886)
 - [11-14 18:11 · #21853 \[Feature\]\[HiSparse\] Add hi\_sparse\_resolve\_residency custom ACLNN op](#pr-21853)
 - [11-14 17:29 · #21882 \[Test\] Use a local work\_dir in BuildManager UT fixture](#pr-21882)
 - [11-14 17:12 · #21879 \[CI\]\[Build\] Bump CANN base images to 9.3.0\_20261113161300](#pr-21879)
@@ -46,9 +46,9 @@
 - [11-13 22:46 · #21854 \[Doc\]\[Feature\] Add DeepSeek-R1-Distill-Qwen-32B support](#pr-21854)
 - [11-13 20:24 · #21839 \[CI\]test: Pr e2e ops](#pr-21839)
 - [11-13 20:24 · #20756 \[BugFix\]\[Model\] Support dense sequence parallelism for the Qwen3.5 family (Qwen3.8-27B)](#pr-20756)
+- [11-13 19:59 · #21834 \[CI\]\[Docker\] Bump mooncake-transfer-engine-npu to 0.3.14](#pr-21834)
 - [11-13 19:24 · #21848 \[CI\]\[Misc\] Bump AISBench tag to v3.1-20261113-master](#pr-21848)
 - [11-13 19:10 · #21751 \[Feature\]\[Model\] Add Qwen PLE UVA host offload with DP memory sharing](#pr-21751)
-- [11-13 18:43 · #21834 \[CI\]\[Docker\] Bump mooncake-transfer-engine-npu to 0.3.14](#pr-21834)
 - [11-13 18:39 · #21717 \[CI\] Restore A5 multi-node nightly test cases](#pr-21717)
 - [11-13 18:39 · #21697 \[BugFix\]\[CI\] Add Qwen3.8-Flash-Next TP2 IPC coverage and preserve PLE sleep state](#pr-21697)
 - [11-13 18:39 · #20633 \[CI\] add test cases for Qwen3.6-35B-w8a8](#pr-20633)
@@ -67,14 +67,12 @@
 - [11-13 12:00 · #21789 \[DevContainer\]\[Feature\] Add Dev Container environment settings for 310P/A2/A3/A5/CPU](#pr-21789)
 - [11-13 11:58 · #21334 \[CI\] add single-node test for a3,a5- #20846](#pr-21334)
 - [11-13 10:34 · #21777 fix: pin torch==2.10.0+cpu to match torch-npu dependency](#pr-21777)
+- [11-13 09:34 · #19884 \[Feature\] Decoder Append-Prefill for Agentic Scenario Prefiller Offloading](#pr-19884)
 - [11-13 01:35 · #20427 \[Feature\] Restore A5 MRV2 ACL graphs in place across sleep](#pr-20427)
 - [11-13 01:32 · #20528 \[Feature\] Integrate Ascend SleepModeBackend lifecycle](#pr-20528)
 - [11-13 01:32 · #21260 \[Feature\]\[EPLB\] Export committed MRV2 expert placement](#pr-21260)
 - [11-13 00:05 · #21746 test: cover Qwen3.6 Model Runner V2 with main-recorded goldens](#pr-21746)
 - [11-12 19:54 · #21712 \[Doc\]\[Misc\] Document Ascend Docker Runtime container setup](#pr-21712)
-- [11-12 18:41 · #21714 \[Refactor\]\[MRV2\] Adopt EPLB policy and model-state hooks](#pr-21714)
-- [11-12 18:34 · #21705 \[Feature\] DSpark expert-pool routing for the expert-offload path](#pr-21705)
-- [11-12 18:10 · #21716 \[临时/勿合入\] ci: route Nightly-A2 cases to offline-cluster runner labels](#pr-21716)
 
 ## 当前关注
 
@@ -84,7 +82,7 @@
 
 为四项 thinking budget 测试新增 CI 耗时估计，分别为 60、60、6600 和 2500 秒，并将功能教程加入 MkDocs 导航。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；旧提交） · **改动：** +1399 / -2 · **最后提交：** 11-15 15:43
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +1399 / -2 · **最后提交：** 11-15 15:43
 
 <a id="pr-21905"></a>
 
@@ -92,7 +90,7 @@
 
 删除容器化 pre-commit 中复制及向宿主注册 problem matcher 的步骤，避免容器/宿主路径不一致导致注册失败；缓存键计算保持不变。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +0 / -15 · **最后提交：** 11-15 12:00 · **Draft**
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +0 / -15 · **最后提交：** 11-15 12:00 · **Draft**
 
 <a id="pr-21903"></a>
 
@@ -100,7 +98,7 @@
 
 调整仓库 Python 编写规范，要求普通文档字符串与聚焦注释；将 DeepSeek V4.1 测试缓存视图改为复用 MRV2 统一缓存运行时接口，替代手工布局构造。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +1113 / -510 · **最后提交：** 11-15 15:16 · **Draft**
+**CI：** 通过（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +1115 / -510 · **最后提交：** 11-15 18:15 · **Draft**
 
 <a id="pr-21900"></a>
 
@@ -108,7 +106,7 @@
 
 修正中英文模型部署教程模板内的标签页语法链接，将失效的 #3-tabs 锚点更新为 #4-tabs。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +14 / -14 · **最后提交：** 11-15 08:30
+**CI：** 通过（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +14 / -14 · **最后提交：** 11-15 08:30
 
 <a id="pr-21892"></a>
 
@@ -116,7 +114,7 @@
 
 在 Ascend MRV2 上组合 PCP 与原生 C8 HiSparse，分离本地 query 行和聚合 KV 写入/Host 镜像布局，复用 Core 加载调度并适配图执行及 MTP。相对 #20926 冻结基础修订的 PCP 增量为 13 文件；基础 PR 已合入，但作者注明当前 14a31903 尚未重跑 NPU，仍需对齐主线验证，DCP 和外部 P/D 不在支持范围。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +8011 / -96 · **最后提交：** 11-14 23:41
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +8011 / -96 · **最后提交：** 11-14 23:41
 
 <a id="pr-21890"></a>
 
@@ -124,7 +122,7 @@
 
 更新社区斜杠命令和 E2E CI 贡献指南中的测试路径示例，改用现有 MRV2 Qwen、双卡数据并行及 310P dense model 测试入口。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +6 / -6 · **最后提交：** 11-14 20:18
+**CI：** 通过（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +6 / -6 · **最后提交：** 11-14 20:18
 
 <a id="pr-21889"></a>
 
@@ -132,7 +130,7 @@
 
 为各镜像中的 memfabric 内核安装及 ACLNN、batch-invariant 算子安装补充 --install-for-all，使生成的算子库可供非 root 用户加载。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +24 / -20 · **最后提交：** 11-14 20:07
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +24 / -20 · **最后提交：** 11-14 20:07
 
 <a id="pr-21888"></a>
 
@@ -140,7 +138,7 @@
 
 为各镜像（含 A5 UBX）的 memfabric 内核安装及 ACLNN、batch-invariant 算子安装补充 --install-for-all，避免仅 root 可访问的安装产物。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +26 / -26 · **最后提交：** 11-14 20:07
+**CI：** 通过（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +26 / -26 · **最后提交：** 11-14 20:07
 
 <a id="pr-21887"></a>
 
@@ -148,15 +146,15 @@
 
 在 Docker 镜像及 ACLNN、batch-invariant 构建安装脚本中启用 --install-for-all，使非 root 用户也能加载已安装算子库。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +12 / -8 · **最后提交：** 11-14 20:07
+**CI：** 通过（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +12 / -8 · **最后提交：** 11-14 20:07
 
 <a id="pr-21886"></a>
 
 ### [#21886 · \[CI\]\[Feature\] Publish failed Daily cases incrementally to one Issue](https://github.com/vllm-project/vllm-ascend/pull/21886)
 
-为 Daily 每个 run/attempt 分配独立身份，失败用例通过单独工作流增量汇总到该轮同一个 Issue，并按失败身份去重、串行合并更新。同步连接各 nightly 工作流及标准库导入例外，创建 Issue 的未知写结果不盲目重试。
+按 Daily 主运行及 attempt 建立轮次身份，在各测试失败后派发独立工作流，将失败用例及运行链接增量汇总到同一个 Issue。更新流程按轮次串行排队，以标记去重并校验来源运行，创建结果不明时不盲目重发，同时接通各芯片工作流和通用导入检查豁免。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +315 / -8 · **最后提交：** 11-14 19:07 · **Draft**
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +337 / -9 · **最后提交：** 11-15 17:43 · **Draft**
 
 <a id="pr-21885"></a>
 
@@ -164,7 +162,7 @@
 
 将 A3 INT8/INT4 MSD 的分组矩阵乘、SiTU 激活和逐 token 量化接入共享 GroupedMatmulSituQuant 算子，补齐 A3 构建、tiling、Torch/Meta 适配及微基准，保留 A5 MX 路径。算子接口扩展要求 OPP 与框架扩展同步重编译。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +4729 / -116 · **最后提交：** 11-14 18:16 · **Draft**
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +4729 / -116 · **最后提交：** 11-14 18:16 · **Draft**
 
 <a id="pr-21882"></a>
 
@@ -172,7 +170,7 @@
 
 为 BuildManager 单测 fixture 显式指定临时目录下的 work\_dir，避免非 root 本地测试访问默认 /root/.cache 而触发权限错误。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +3 / -0 · **最后提交：** 11-14 17:04
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +3 / -0 · **最后提交：** 11-14 17:04
 
 <a id="pr-21879"></a>
 
@@ -180,7 +178,7 @@
 
 将八份 Ubuntu/openEuler Dockerfile 的 CANN 基础镜像从 quay.io 9.2.1 切换到华为云仓库 9.3.0\_20261113161300，覆盖 310P、910B、A3 和 A5。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +8 / -8 · **最后提交：** 11-14 16:54
+**CI：** 通过（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +8 / -8 · **最后提交：** 11-14 16:54
 
 <a id="pr-21871"></a>
 
@@ -188,7 +186,7 @@
 
 修正 serving benchmark 示例，将旧的 --endpoint-type 参数替换为 --backend openai-chat，保持数据集和聊天接口配置不变。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +1 / -1 · **最后提交：** 11-13 23:02
+**CI：** 通过（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +1 / -1 · **最后提交：** 11-13 23:02
 
 <a id="pr-21870"></a>
 
@@ -268,7 +266,7 @@
 
 将 PR/main2main CI 与各架构镜像中的 mooncake-transfer-engine-npu 从 0.3.14rc3 升级到 0.3.14，并同步依赖版本维护文档。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 11:46；提交对应关系待核验）（恢复保留；待刷新） · **改动：** +15 / -15 · **最后提交：** 11-13 16:58
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +15 / -15 · **最后提交：** 11-13 16:58
 
 <a id="pr-21833"></a>
 
@@ -300,7 +298,7 @@
 
 新增 CPU、310P、A2、A3、A5 的开发容器配置，统一源码挂载、编辑器格式化、依赖安装和 ccache 缓存；各硬件配置设置对应 CANN 镜像与编译环境。
 
-**CI：** 失败（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +315 / -0 · **最后提交：** 11-13 11:36
+**CI：** 失败（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +315 / -0 · **最后提交：** 11-13 11:36
 
 <a id="pr-21777"></a>
 
@@ -308,7 +306,7 @@
 
 将构建配置与运行依赖中的 PyTorch 固定版本从 2.10.0 改为 2.10.0+cpu。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** +6 / -2 · **最后提交：** 11-13 10:24
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +6 / -2 · **最后提交：** 11-13 10:24
 
 <a id="pr-21751"></a>
 
@@ -436,7 +434,7 @@
 
 将文档导航中的 encoder\_cache\_cpu\_offload 路径改为 encoder\_cache\_offload，并将中英文标题统一为“编码器缓存卸载 / Encoder Cache Offload”；摘要仅覆盖保留范围内的导航配置。（保留上次摘要；当前提交待核验。）
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21638"></a>
 
@@ -508,7 +506,7 @@
 
 将 fused\_indexer\_prologue 接入 A2/A3 算子构建清单，注册 Torch NPU 与 Meta 接口，支持原地更新 K cache 和 scale cache；摘要聚焦构建与绑定接入。（保留上次摘要；当前提交待核验。）
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21521"></a>
 
@@ -516,7 +514,7 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。（保留上次摘要；当前提交待核验。）
 
-**CI：** 失败（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21513"></a>
 
@@ -532,7 +530,7 @@
 
 将 InternLM2-20B-Chat 加入 nightly 精度测试、模型下载清单与文档导航，并为双卡测试设置 900 秒调度估计及 Atlas A2 BF16/TP2 精度配置。（保留上次摘要；当前提交待核验。）
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21500"></a>
 
@@ -540,7 +538,7 @@
 
 相关文件已纳入关注，当前提交的变更摘要待补齐。（保留上次摘要；当前提交待核验。）
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21493"></a>
 
@@ -548,7 +546,7 @@
 
 将 E2E 工作流临时缩减为 A3 FED 2 卡和 4 卡 runner 各三个用例，以验证作业 Pod，并使用已验证的 vLLM main 提交。该验证显式省略 lint、CPU UT、其他 NPU 测试和标签门禁，补丁注明不用于合入。（保留上次摘要；当前提交待核验。）
 
-**CI：** 失败（最近已知；待刷新；上次完整检查：11-15 15:32；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
 
 <a id="pr-21490"></a>
 
@@ -646,6 +644,14 @@
 
 **CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 16:39；当前提交） · **改动：** +354 / -5 · **最后提交：** 11-13 17:36
 
+<a id="pr-21276"></a>
+
+### [#21276 · \[Refactor\] remove simple cpu offload](https://github.com/vllm-project/vllm-ascend/pull/21276)
+
+从 CI 耗时配置和 upstream 测试清单中删除 simple CPU/KV offload 相关项目，并移除生成测试矩阵中的两项用例及对应测试包说明。
+
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +15 / -1041 · **最后提交：** 11-11 16:04
+
 <a id="pr-21261"></a>
 
 ### [#21261 · \[BugFix\]\[EPLB\] Validate STAIR placements against per-step load](https://github.com/vllm-project/vllm-ascend/pull/21261)
@@ -684,7 +690,7 @@
 
 将 CI 使用的已验证 vLLM main 提交更新为 ba15685，并为 KV offload 单测的模拟模型信息补齐 speculator\_config\_class 字段。
 
-**CI：** 运行中（最近已知；待刷新；上次完整检查：11-15 16:39；当前提交） · **改动：** +1234 / -231 · **最后提交：** 11-15 11:31
+**CI：** 运行中（最近已知；待刷新；上次完整检查：11-15 16:39；旧提交） · **改动：** +1232 / -220 · **最后提交：** 11-15 17:43
 
 <a id="pr-20914"></a>
 
@@ -700,7 +706,7 @@
 
 在共享 E2E runner 中增加引擎计数器/仪表指标读取和跨 DP rank 汇总，支持 KV pool 命中观测，同时上调六项 A3 测试的 CI 调度耗时估计。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 11:46；提交对应关系待核验）（恢复保留；待刷新） · **改动：** +1409 / -162 · **最后提交：** 11-15 17:33
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +1409 / -162 · **最后提交：** 11-15 17:33
 
 <a id="pr-20756"></a>
 
@@ -708,7 +714,7 @@
 
 为 Qwen3.8-27B dense SP 双卡端到端用例新增 600 秒的 CI 调度预估时长。
 
-**CI：** 通过（最近已知；待刷新；上次完整检查：11-15 16:39；当前提交） · **改动：** +779 / -28 · **最后提交：** 11-13 12:03
+**CI：** 通过（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +779 / -28 · **最后提交：** 11-13 12:03
 
 <a id="pr-20633"></a>
 
@@ -754,9 +760,9 @@
 
 ### [#20299 · \[Feature\] Integrate the packaged DeepGEMM V4.1 MegaMoE backend on Ascend 950](https://github.com/vllm-project/vllm-ascend/pull/20299)
 
-为 A5 CI 和镜像安装 DeepGEMM 构建依赖，setup.py 按固定版本构建并打包原生扩展；补充独立编译工具、构建依赖和生成文件忽略规则。（保留上次摘要；当前提交待核验。）
+将固定修订的 DeepGEMM 原生扩展及 JIT 头文件纳入 A5 wheel/可编辑安装，记录依赖版本和构建校验信息；A5 镜像与 CI 同步安装 GCC 13+、elfutils 和固定版本解析器依赖，编译器选择仅作用于该扩展。另增加面向调用方输出缓冲区的 MXFP8 量化绑定，实际数值与多卡性能仍需独立验证。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 17:41；当前提交） · **改动：** 待更新 · **最后提交：** 待更新 · **Draft**
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 17:41；当前提交） · **改动：** +1378 / -14 · **最后提交：** 11-14 18:27 · **Draft**
 
 <a id="pr-20205"></a>
 
@@ -764,15 +770,23 @@
 
 为通过 HCCL 更新 draft 模型权重的双卡测试新增 510 秒 CI 调度耗时估计。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 16:39；当前提交） · **改动：** +787 / -53 · **最后提交：** 11-14 11:14
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +787 / -53 · **最后提交：** 11-14 11:14
 
 <a id="pr-20138"></a>
 
 ### [#20138 · \[Feature\]\[RuntimeGuard\] Add rare\_chars detector with async pair collect](https://github.com/vllm-project/vllm-ascend/pull/20138)
 
-调整 setup.py，将普通 setuptools C 扩展与 Ascend CMake 扩展分开构建，使 rare\_feed\_native 在开关自定义内核两种模式下均随 wheel 打包，并纳入配套数据文件。同步为 vendored rare 算法配置 Ruff、codespell 和 typos 例外。（保留上次摘要；当前提交待核验。）
+调整 setuptools 构建，将 rare\_feed\_native 纯 CPython 扩展与 CMake 扩展分开处理，保证关闭自定义 Ascend 算子时仍可打包，并纳入 rare 配置和表数据。同步为引入的 rare\_chars 算法目录设置格式与拼写检查豁免。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 14:41；当前提交） · **改动：** 待更新 · **最后提交：** 待更新
+**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 14:41；当前提交） · **改动：** +5245 / -43 · **最后提交：** 11-14 23:18
+
+<a id="pr-19884"></a>
+
+### [#19884 · \[Feature\] Decoder Append-Prefill for Agentic Scenario Prefiller Offloading](https://github.com/vllm-project/vllm-ascend/pull/19884)
+
+在 MkDocs 功能导航中加入 Decoder Append-Prefill 文档入口，使该功能说明可从站点目录访问。
+
+**CI：** 未知（待刷新；尚无完整检查记录） · **改动：** +5941 / -2 · **最后提交：** 11-13 09:34
 
 <a id="pr-19442"></a>
 
@@ -804,7 +818,7 @@
 
 将 expert offload 的单卡端到端用例加入 A5 精选 CI 测试集，指定 a5-4 runner，并设置 600 秒调度预估时长。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 16:39；当前提交） · **改动：** +2017 / -0 · **最后提交：** 11-13 11:50
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +2017 / -0 · **最后提交：** 11-13 11:50
 
 <a id="pr-18559"></a>
 
@@ -828,7 +842,7 @@
 
 为 KV Trace 单卡测试配置 600 秒初始 CI 耗时估计，覆盖 eager/FULL 与 trace 开关组合，并将 KV Trace 功能文档加入 MkDocs 导航。
 
-**CI：** 运行中（最近已知；待刷新；上次完整检查：11-15 16:39；当前提交） · **改动：** +2284 / -1 · **最后提交：** 11-15 10:50
+**CI：** 通过（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +2284 / -1 · **最后提交：** 11-15 10:50
 
 <a id="pr-12751"></a>
 
@@ -836,4 +850,4 @@
 
 将 PR 测试工作流的 dorny/paths-filter 从 v4 固定到 v4.0.3。
 
-**CI：** 失败（ci-gate）（最近已知；待刷新；上次完整检查：11-15 16:39；当前提交） · **改动：** +1 / -1 · **最后提交：** 11-13 17:59
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 18:35；当前提交） · **改动：** +1 / -1 · **最后提交：** 11-13 17:59
