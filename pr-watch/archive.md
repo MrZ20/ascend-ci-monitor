@@ -1,10 +1,18 @@
 # PR 归档
 
-最近刷新：2026-11-15 19:58:24（上海时间）
+最近刷新：2026-11-15 21:08:54（上海时间）
 
 仅记录开始跟踪后确认合入或关闭的 PR，不追溯全部历史。
 
 <!-- pr-watch-pruned: [21681] -->
+
+<a id="pr-21549"></a>
+
+### [#21549 · \[Feature\] Add experimental Kimi KDA RecoverSSM support](https://github.com/vllm-project/vllm-ascend/pull/21549)
+
+为历史 Kimi KDA RecoverSSM 测试的 dtype 断言新增精确 gitleaks 误报豁免，限定提交、文件和断言行，不放宽其他密钥检测。
+
+**CI：** 通过（最近已知；上次完整检查：11-15 17:41；当前提交） · **改动：** +1282 / -154 · **最后提交：** 11-15 12:47 · **已合入：** 2026-11-15 18:11:41
 
 <a id="pr-21310"></a>
 
