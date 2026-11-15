@@ -1,10 +1,18 @@
 # PR 归档
 
-最近刷新：2026-11-15 16:56:22（上海时间）
+最近刷新：2026-11-15 18:00:21（上海时间）
 
 仅记录开始跟踪后确认合入或关闭的 PR，不追溯全部历史。
 
 <!-- pr-watch-pruned: [21681] -->
+
+<a id="pr-21310"></a>
+
+### [#21310 · \[Refactor\]\[Core\] Remove dynamic chunk size CPP feature, configuration, and documentation](https://github.com/vllm-project/vllm-ascend/pull/21310)
+
+从 CI 调度清单、耗时估计和生成的测试矩阵中移除动态分块流水线性能测试，并清理相应用户/设计文档导航入口。
+
+**CI：** 失败（ci-gate）（最近已知；上次完整检查：11-15 15:32；当前提交） · **改动：** +188 / -5385 · **最后提交：** 11-15 10:19 · **已合入：** 2026-11-15 17:23:43
 
 <a id="pr-21875"></a>
 
