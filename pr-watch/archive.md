@@ -1,10 +1,26 @@
 # PR 归档
 
-最近刷新：2026-11-16 08:44:48（上海时间）
+最近刷新：2026-11-16 12:07:27（上海时间）
 
 仅记录开始跟踪后确认合入或关闭的 PR，不追溯全部历史。
 
 <!-- pr-watch-pruned: [21681] -->
+
+<a id="pr-21848"></a>
+
+### [#21848 · \[CI\]\[Misc\] Bump AISBench tag to v3.1-20261113-master](https://github.com/vllm-project/vllm-ascend/pull/21848)
+
+将 310P、A2、A3、A5 nightly 镜像的 AISBench 默认版本更新为 v3.1-20261113-master，并同步多节点测试贡献指南。
+
+**CI：** 通过（最近已知；上次完整检查：11-16 04:18；当前提交） · **改动：** +6 / -6 · **最后提交：** 11-13 18:14 · **已合入：** 2026-11-16 10:44:00
+
+<a id="pr-20756"></a>
+
+### [#20756 · \[BugFix\]\[Model\] Support dense sequence parallelism for the Qwen3.5 family (Qwen3.8-27B)](https://github.com/vllm-project/vllm-ascend/pull/20756)
+
+为 Qwen3.8-27B dense SP 双卡端到端用例新增 600 秒的 CI 调度预估时长。
+
+**CI：** 通过（最近已知；上次完整检查：11-16 04:18；当前提交） · **改动：** +779 / -28 · **最后提交：** 11-13 12:03 · **已合入：** 2026-11-16 10:29:13
 
 <a id="pr-21549"></a>
 
